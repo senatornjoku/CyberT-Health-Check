@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CyberT Health Check</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:        #050d12;
+      --surface:   #0b1a22;
+      --surface2:  #0f2230;
+      --border:    #1a3545;
+      --accent:    #00e5ff;
+      --accent2:   #00ff88;
+      --danger:    #ff4560;
+      --warn:      #ffb400;
+      --text:      #c8dde8;
+      --text-dim:  #5a7d8f;
+      --white:     #eaf6ff;
+      --radius:    12px;
+      --font-head: 'Syne', sans-serif;
+      --font-mono: 'Space Mono', monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-mono);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── GRID BACKGROUND ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(0,229,255,.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,229,255,.03) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── SCANLINES ── */
+    body::after {
+      content: '';
+      position: fixed; inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,.07) 2px,
+        rgba(0,0,0,.07) 4px
+      );
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    #app {
+      position: relative;
+      z-index: 1;
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+    }
+
+    /* ── HEADER ── */
+    .site-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 48px;
+    }
+    .logo-mark {
+      width: 42px; height: 42px;
+      border: 2px solid var(--accent);
+      border-radius: 8px;
+      display: grid; place-items: center;
+      font-family: var(--font-head);
+      font-weight: 800;
+      font-size: 18px;
+      color: var(--accent);
+      flex-shrink: 0;
+      box-shadow: 0 0 18px rgba(0,229,255,.25);
+    }
+    .logo-text {
+      font-family: var(--font-head);
+      font-weight: 800;
+      font-size: 20px;
+      color: var(--white);
+      letter-spacing: -.3px;
+    }
+    .logo-text span { color: var(--accent); }
+
+    /* ── SCREEN CONTAINERS ── */
+    .screen { display: none; animation: fadeUp .4s ease both; }
+    .screen.active { display: block; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── WELCOME SCREEN ── */
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      padding: 4px 14px;
+      font-size: 11px;
+      color: var(--accent);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 28px;
+    }
+    .hero-badge::before {
+      content: '';
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--accent2);
+      box-shadow: 0 0 8px var(--accent2);
+    }
+
+    h1 {
+      font-family: var(--font-head);
+      font-size: clamp(32px, 6vw, 52px);
+      font-weight: 800;
+      color: var(--white);
+      line-height: 1.1;
+      letter-spacing: -1px;
+      margin-bottom: 20px;
+    }
+    h1 .highlight {
+      color: var(--accent);
+      display: block;
+    }
+
+    .hero-desc {
+      font-size: 14px;
+      line-height: 1.8;
+      color: var(--text);
+      max-width: 540px;
+      margin-bottom: 36px;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 40px;
+    }
+    .info-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+      background: var(--surface);
+    }
+    .info-card .ic-icon {
+      font-size: 22px;
+      margin-bottom: 10px;
+    }
+    .info-card .ic-label {
+      font-family: var(--font-head);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--white);
+      margin-bottom: 4px;
+    }
+    .info-card .ic-sub {
+      font-size: 11px;
+      color: var(--text-dim);
+      line-height: 1.5;
+    }
+
+    /* ── PROFILE SELECT ── */
+    .section-label {
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 16px;
+    }
+    .profile-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 36px;
+    }
+    .profile-card {
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .2s, background .2s, transform .15s;
+      background: var(--surface);
+    }
+    .profile-card:hover { border-color: var(--accent); background: var(--surface2); transform: translateY(-2px); }
+    .profile-card.selected { border-color: var(--accent); background: var(--surface2); box-shadow: 0 0 20px rgba(0,229,255,.15); }
+    .profile-card .pc-icon { font-size: 30px; margin-bottom: 10px; }
+    .profile-card .pc-name {
+      font-family: var(--font-head);
+      font-weight: 700;
+      font-size: 13px;
+      color: var(--white);
+      margin-bottom: 4px;
+    }
+    .profile-card .pc-sub { font-size: 11px; color: var(--text-dim); }
+
+    /* ── BUTTONS ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 28px;
+      border-radius: 8px;
+      font-family: var(--font-head);
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      border: none;
+      transition: all .2s;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #000;
+    }
+    .btn-primary:hover { background: #33eaff; box-shadow: 0 0 24px rgba(0,229,255,.4); }
+    .btn-primary:disabled { opacity: .35; cursor: not-allowed; box-shadow: none; }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-dim);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover { border-color: var(--text-dim); color: var(--text); }
+
+    .btn-danger {
+      background: transparent;
+      color: var(--danger);
+      border: 1px solid var(--danger);
+    }
+    .btn-danger:hover { background: rgba(255,69,96,.1); }
+
+    /* ── ASSESSMENT SCREEN ── */
+    .progress-bar-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      height: 6px;
+      margin-bottom: 8px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-radius: 99px;
+      transition: width .4s cubic-bezier(.4,0,.2,1);
+    }
+    .progress-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-bottom: 36px;
+    }
+
+    .category-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+    .cat-icon {
+      width: 44px; height: 44px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      display: grid; place-items: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+    .cat-meta {}
+    .cat-name {
+      font-family: var(--font-head);
+      font-weight: 700;
+      font-size: 18px;
+      color: var(--white);
+    }
+    .cat-sub { font-size: 12px; color: var(--text-dim); }
+
+    .question-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      padding: 24px;
+      margin-bottom: 14px;
+      transition: border-color .2s;
+    }
+    .question-card:focus-within { border-color: rgba(0,229,255,.4); }
+
+    .q-number {
+      font-size: 11px;
+      color: var(--text-dim);
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+    }
+    .q-text {
+      font-family: var(--font-head);
+      font-weight: 600;
+      font-size: 15px;
+      color: var(--white);
+      line-height: 1.5;
+      margin-bottom: 18px;
+    }
+    .q-help {
+      font-size: 12px;
+      color: var(--text-dim);
+      margin-top: -10px;
+      margin-bottom: 18px;
+      line-height: 1.6;
+    }
+
+    .answers {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+    .answers.four-col { grid-template-columns: repeat(4, 1fr); }
+
+    .answer-btn {
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      cursor: pointer;
+      transition: all .15s;
+      text-align: center;
+    }
+    .answer-btn:hover { border-color: var(--accent); color: var(--white); }
+    .answer-btn.selected {
+      border-color: var(--accent);
+      background: rgba(0,229,255,.1);
+      color: var(--accent);
+    }
+    .answer-btn.yes.selected   { border-color: var(--accent2); background: rgba(0,255,136,.08); color: var(--accent2); }
+    .answer-btn.no.selected    { border-color: var(--danger); background: rgba(255,69,96,.08); color: var(--danger); }
+    .answer-btn.unsure.selected { border-color: var(--warn); background: rgba(255,180,0,.08); color: var(--warn); }
+    .answer-btn.na.selected    { border-color: var(--text-dim); background: rgba(90,125,143,.08); color: var(--text-dim); }
+
+    .assessment-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 28px;
+    }
+
+    /* ── RESULTS SCREEN ── */
+    .results-header {
+      text-align: center;
+      padding: 40px 0 36px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 36px;
+    }
+
+    .score-ring {
+      width: 160px; height: 160px;
+      margin: 0 auto 20px;
+      position: relative;
+    }
+    .score-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+    .score-ring circle { fill: none; stroke-width: 10; }
+    .score-ring .track { stroke: var(--surface2); }
+    .score-ring .fill  { stroke-dasharray: 408; stroke-dashoffset: 408; stroke-linecap: round; transition: stroke-dashoffset 1.4s cubic-bezier(.4,0,.2,1) .3s; }
+    .score-ring .label {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+    }
+    .score-ring .pct {
+      font-family: var(--font-head);
+      font-size: 36px;
+      font-weight: 800;
+      color: var(--white);
+      line-height: 1;
+    }
+    .score-ring .pts {
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+
+    .maturity-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 99px;
+      padding: 6px 18px;
+      font-family: var(--font-head);
+      font-weight: 700;
+      font-size: 14px;
+      margin-bottom: 16px;
+    }
+
+    h2 {
+      font-family: var(--font-head);
+      font-weight: 800;
+      font-size: 28px;
+      color: var(--white);
+      margin-bottom: 8px;
+    }
+    .results-desc {
+      font-size: 13px;
+      color: var(--text);
+      line-height: 1.7;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    /* category scores */
+    .cat-scores {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 36px;
+    }
+    .cat-score-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+    }
+    .csr-icon { font-size: 20px; flex-shrink: 0; }
+    .csr-info { flex: 1; }
+    .csr-name { font-family: var(--font-head); font-size: 13px; font-weight: 700; color: var(--white); margin-bottom: 6px; }
+    .csr-bar-wrap { height: 5px; background: var(--surface2); border-radius: 99px; overflow: hidden; }
+    .csr-bar { height: 100%; border-radius: 99px; transition: width 1s ease .5s; }
+    .csr-pct { font-size: 12px; color: var(--text-dim); flex-shrink: 0; width: 38px; text-align: right; }
+
+    /* recommendations */
+    .reco-section { margin-bottom: 36px; }
+    .reco-title {
+      font-family: var(--font-head);
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 16px;
+    }
+    .reco-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      padding: 18px 20px;
+      margin-bottom: 10px;
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+    }
+    .reco-card .rc-priority {
+      width: 28px; height: 28px;
+      border-radius: 6px;
+      display: grid; place-items: center;
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+    .reco-card .rc-body {}
+    .reco-card .rc-heading {
+      font-family: var(--font-head);
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--white);
+      margin-bottom: 4px;
+    }
+    .reco-card .rc-text { font-size: 12px; color: var(--text); line-height: 1.6; }
+    .reco-card .rc-link { font-size: 11px; color: var(--accent); text-decoration: none; margin-top: 6px; display: inline-block; }
+    .reco-card .rc-link:hover { text-decoration: underline; }
+
+    .priority-high   { background: rgba(255,69,96,.12);  color: var(--danger); }
+    .priority-medium { background: rgba(255,180,0,.12);  color: var(--warn);   }
+    .priority-low    { background: rgba(0,255,136,.12);  color: var(--accent2); }
+
+    /* results actions */
+    .results-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    /* ── DISCLAIMER ── */
+    .disclaimer {
+      margin-top: 48px;
+      padding: 16px 20px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 11px;
+      color: var(--text-dim);
+      line-height: 1.7;
+    }
+    .disclaimer strong { color: var(--text); }
+
+    /* ── FOOTER ── */
+    footer {
+      text-align: center;
+      padding-top: 48px;
+      font-size: 11px;
+      color: var(--text-dim);
+      line-height: 1.8;
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 540px) {
+      .info-grid, .profile-grid { grid-template-columns: 1fr; }
+      .answers.four-col { grid-template-columns: repeat(2, 1fr); }
+      .results-actions { flex-direction: column; }
+    }
+    @media (max-width: 420px) {
+      .answers { grid-template-columns: 1fr; }
+    }
+
+    /* Print */
+    @media print {
+      body { background: white; color: black; }
+      body::before, body::after { display: none; }
+      .btn, .results-actions { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- SITE HEADER -->
+  <header class="site-header">
+    <div class="logo-mark">CT</div>
+    <div class="logo-text">Cyber<span>T</span> Health Check</div>
+  </header>
+
+  <!-- ╔══════════════════════════════╗ -->
+  <!-- ║       WELCOME SCREEN         ║ -->
+  <!-- ╚══════════════════════════════╝ -->
+  <section class="screen active" id="screen-welcome">
+    <div class="hero-badge">Free · Anonymous · 5 Minutes</div>
+
+    <h1>
+      How secure<br>
+      <span class="highlight">are you online?</span>
+    </h1>
+
+    <p class="hero-desc">
+      CyberT Health Check is a free, anonymous self-assessment tool that helps individuals,
+      small businesses, and not-for-profits understand their cyber security posture —
+      and get a clear, actionable plan to improve it.
+    </p>
+
+    <div class="info-grid">
+      <div class="info-card">
+        <div class="ic-icon">🔒</div>
+        <div class="ic-label">Anonymous</div>
+        <div class="ic-sub">No personal data collected. Your answers stay on your device.</div>
+      </div>
+      <div class="info-card">
+        <div class="ic-icon">⚡</div>
+        <div class="ic-label">Under 5 Minutes</div>
+        <div class="ic-sub">15 quick questions across 5 key security categories.</div>
+      </div>
+      <div class="info-card">
+        <div class="ic-icon">📋</div>
+        <div class="ic-label">Action Plan</div>
+        <div class="ic-sub">Personalised, prioritised steps to strengthen your defences.</div>
+      </div>
+    </div>
+
+    <p class="section-label">Who is this for?</p>
+    <div class="profile-grid">
+      <div class="profile-card" data-profile="individual" onclick="selectProfile(this)">
+        <div class="pc-icon">👤</div>
+        <div class="pc-name">Individual</div>
+        <div class="pc-sub">Personal devices & accounts</div>
+      </div>
+      <div class="profile-card" data-profile="business" onclick="selectProfile(this)">
+        <div class="pc-icon">🏢</div>
+        <div class="pc-name">Small Business</div>
+        <div class="pc-sub">Up to 100 employees</div>
+      </div>
+      <div class="profile-card" data-profile="nonprofit" onclick="selectProfile(this)">
+        <div class="pc-icon">🤝</div>
+        <div class="pc-name">Not-for-Profit</div>
+        <div class="pc-sub">NFPs, charities & community orgs</div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" id="btn-start" onclick="startAssessment()" disabled>
+      Start My Assessment →
+    </button>
+  </section>
+
+  <!-- ╔══════════════════════════════╗ -->
+  <!-- ║     ASSESSMENT SCREEN        ║ -->
+  <!-- ╚══════════════════════════════╝ -->
+  <section class="screen" id="screen-assessment">
+
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
+    </div>
+    <div class="progress-meta">
+      <span id="progress-label">Category 1 of 5</span>
+      <span id="progress-q">Question 1 of 15</span>
+    </div>
+
+    <div class="category-header">
+      <div class="cat-icon" id="cat-icon">🔑</div>
+      <div class="cat-meta">
+        <div class="cat-name" id="cat-name">Passwords &amp; Authentication</div>
+        <div class="cat-sub" id="cat-sub">Questions 1–3</div>
+      </div>
+    </div>
+
+    <div id="questions-container"></div>
+
+    <div class="assessment-nav">
+      <button class="btn btn-ghost" id="btn-prev" onclick="prevCategory()">← Back</button>
+      <button class="btn btn-primary" id="btn-next" onclick="nextCategory()">Next →</button>
+    </div>
+  </section>
+
+  <!-- ╔══════════════════════════════╗ -->
+  <!-- ║       RESULTS SCREEN         ║ -->
+  <!-- ╚══════════════════════════════╝ -->
+  <section class="screen" id="screen-results">
+
+    <div class="results-header">
+      <div class="score-ring" id="score-ring">
+        <svg viewBox="0 0 140 140">
+          <circle class="track" cx="70" cy="70" r="65"/>
+          <circle class="fill"  cx="70" cy="70" r="65" id="ring-fill"/>
+        </svg>
+        <div class="label">
+          <div class="pct" id="score-pct">0%</div>
+          <div class="pts" id="score-pts">0/0 pts</div>
+        </div>
+      </div>
+
+      <div class="maturity-badge" id="maturity-badge">● Loading...</div>
+      <h2 id="results-heading">Your Cyber Health Score</h2>
+      <p class="results-desc" id="results-desc">Calculating your results...</p>
+    </div>
+
+    <p class="section-label">Score by Category</p>
+    <div class="cat-scores" id="cat-scores"></div>
+
+    <div class="reco-section">
+      <div class="reco-title">Your Action Plan</div>
+      <div id="recommendations"></div>
+    </div>
+
+    <div class="results-actions">
+      <button class="btn btn-primary" onclick="window.print()">🖨 Print Report</button>
+      <button class="btn btn-ghost" onclick="restartTool()">↺ Start Over</button>
+    </div>
+
+    <div class="disclaimer">
+      <strong>Disclaimer:</strong> CyberT Health Check is an open-source self-assessment tool for
+      general awareness purposes. Results are indicative only and do not constitute a formal
+      security audit. For critical infrastructure or regulated industries, consult a qualified
+      cyber security professional. No data is transmitted — all processing occurs locally in your browser.
+    </div>
+
+  </section>
+
+  <footer>
+    <p>CyberT Health Check · Open Source · <a href="https://github.com" target="_blank">View on GitHub</a></p>
+    <p style="margin-top:6px;">Inspired by the <a href="https://www.cyber.gov.au/cyberhealthcheck" target="_blank">ASD Cyber Health Check</a> · Built for everyone</p>
+  </footer>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   DATA
+═══════════════════════════════════════════════════════ */
+const CATEGORIES = [
+  {
+    id: 'passwords',
+    name: 'Passwords & Authentication',
+    icon: '🔑',
+    sub: 'Questions 1–3',
+    questions: [
+      {
+        id: 'p1',
+        text: 'Do you use a unique password for each of your important accounts (email, banking, work)?',
+        help: 'Reusing passwords means one breach can compromise all your accounts.',
+        answers: ['Yes', 'No', 'Not Sure']
+      },
+      {
+        id: 'p2',
+        text: 'Do you use a password manager to generate and store your passwords?',
+        help: 'Password managers help create strong, unique passwords for every account.',
+        answers: ['Yes', 'No', 'Not Sure']
+      },
+      {
+        id: 'p3',
+        text: 'Do you use multi-factor authentication (MFA) on your email and important accounts?',
+        help: 'MFA adds a second verification step, making it much harder for attackers to gain access.',
+        answers: ['Yes', 'No', 'Not Sure', 'N/A']
+      },
+    ]
+  },
+  {
+    id: 'updates',
+    name: 'Software & Device Security',
+    icon: '🛡️',
+    sub: 'Questions 4–6',
+    questions: [
+      {
+        id: 'u1',
+        text: 'Do you keep your operating system and applications updated to the latest version?',
+        help: 'Updates patch security vulnerabilities that attackers actively exploit.',
+        answers: ['Yes', 'No', 'Not Sure']
+      },
+      {
+        id: 'u2',
+        text: 'Do you have active antivirus or endpoint security software on your devices?',
+        help: 'Security software helps detect and block malware before it causes harm.',
+        answers: ['Yes', 'No', 'Not Sure']
+      },
+      {
+        id: 'u3',
+        text: 'Do you use a firewall on your network or devices?',
+        help: 'A firewall monitors and filters incoming and outgoing network traffic.',
+        answers: ['Yes', 'No', 'Not Sure', 'N/A']
+      },
+    ]
+  },
+  {
+    id: 'backups',
+    name: 'Backups & Data Recovery',
+    icon: '💾',
+    sub: 'Questions 7–9',
+    questions: [
+      {
+        id: 'b1',
+        text: 'Do you regularly back up your important data (files, documents, photos)?',
+        help: 'Regular backups protect you from ransomware, hardware failure, and accidental deletion.',
+        answers: ['Yes', 'No', 'Not Sure']
+      },
+      {
+        id: 'b2',
+        text: 'Are your backups stored in a separate location (e.g., external drive or cloud service)?',
+        help: 'Keeping backups separate from your main device means losing one doesn\'t mean losing both.',
+        answers: ['Yes', 'No', 'Not Sure', 'N/A']
+      },
+      {
+        id: 'b3',
+        text: 'Have you tested restoring from your backup to confirm it works?',
+        help: 'An untested backup may not work when you need it most.',
+        answers: ['Yes', 'No', 'Not Sure', 'N/A']
+      },
+    ]
+  },
+  {
+    id: 'phishing',
+    name: 'Phishing & Scam Awareness',
+    icon: '🎣',
+    sub: 'Questions 10–12',
+    questions: [
+      {
+        id: 'ph1',
+        text: 'Are you confident you can identify phishing emails, fake SMS messages, or suspicious calls?',
+        help: 'Phishing is the #1 method attackers use to steal credentials and install malware.',
+        answers: ['Yes', 'No', 'Not Sure']
+      },
+      {
+        id: 'ph2',
+        text: 'Do you verify links and sender addresses before clicking or responding to unexpected messages?',
+        help: 'Hovering over links and checking sender domains can prevent most phishing attacks.',
+        answers: ['Yes', 'No', 'Not Sure']
+      },
+      {
+        id: 'ph3',
+        text: 'Have you or your team completed any cybersecurity awareness training in the last 12 months?',
+        help: 'Regular training dramatically reduces the risk of falling for social engineering attacks.',
+        answers: ['Yes', 'No', 'Not Sure', 'N/A']
+      },
+    ]
+  },
+  {
+    id: 'access',
+    name: 'Access Control & Accounts',
+    icon: '🔐',
+    sub: 'Questions 13–15',
+    questions: [
+      {
+        id: 'a1',
+        text: 'Do you limit administrator/full-access rights to only those who truly need them?',
+        help: 'The principle of least privilege reduces the damage any single compromised account can cause.',
+        answers: ['Yes', 'No', 'Not Sure', 'N/A']
+      },
+      {
+        id: 'a2',
+        text: 'Do you promptly remove account access when a staff member, volunteer, or contractor leaves?',
+        help: 'Stale accounts are a common entry point for attackers and disgruntled ex-employees.',
+        answers: ['Yes', 'No', 'Not Sure', 'N/A']
+      },
+      {
+        id: 'a3',
+        text: 'Do you review the apps and services that have access to your accounts or data (e.g., third-party integrations)?',
+        help: 'Unused or over-permissioned apps can leak data or be exploited after a breach.',
+        answers: ['Yes', 'No', 'Not Sure', 'N/A']
+      },
+    ]
+  }
+];
+
+const RECO_DB = {
+  p1: {
+    heading: 'Use unique passwords for every account',
+    text: 'Reusing passwords is one of the biggest risks online. If one account is breached, all accounts with the same password are at risk. Start with your email and banking accounts first.',
+    priority: 'high',
+    link: 'https://www.cyber.gov.au/protect-yourself/securing-your-accounts/passphrases'
+  },
+  p2: {
+    heading: 'Adopt a password manager',
+    text: 'Password managers like Bitwarden, 1Password, or Dashlane securely store and generate strong, unique passwords. You only need to remember one master password.',
+    priority: 'high',
+    link: 'https://www.cyber.gov.au/protect-yourself/securing-your-accounts/passphrases'
+  },
+  p3: {
+    heading: 'Enable Multi-Factor Authentication (MFA)',
+    text: 'MFA is one of the most effective controls you can enable. Turn it on for email, banking, social media, and cloud services. Use an authenticator app rather than SMS where possible.',
+    priority: 'high',
+    link: 'https://www.cyber.gov.au/protect-yourself/securing-your-accounts/multi-factor-authentication'
+  },
+  u1: {
+    heading: 'Enable automatic software updates',
+    text: 'Set your operating system and applications to update automatically. Most breaches exploit known vulnerabilities for which patches already exist. Don\'t delay updates.',
+    priority: 'high',
+    link: 'https://www.cyber.gov.au/protect-yourself/securing-your-devices/how-update-your-device'
+  },
+  u2: {
+    heading: 'Install reputable security software',
+    text: 'Use a reputable antivirus or endpoint detection solution. Keep it updated. Windows Defender is a solid free option for Windows users. macOS has built-in protections worth reviewing.',
+    priority: 'medium',
+    link: 'https://www.cyber.gov.au/protect-yourself/securing-your-devices/antivirus-software'
+  },
+  u3: {
+    heading: 'Enable your firewall',
+    text: 'Ensure the firewall is active on your router and operating system. For businesses, consider a next-generation firewall (NGFW) for advanced traffic filtering.',
+    priority: 'medium',
+    link: 'https://www.cyber.gov.au'
+  },
+  b1: {
+    heading: 'Set up regular automated backups',
+    text: 'Use the 3-2-1 backup rule: 3 copies of data, on 2 different media types, with 1 stored offsite. Automate backups so you don\'t rely on remembering to do it manually.',
+    priority: 'high',
+    link: 'https://www.cyber.gov.au/protect-yourself/recovering-from-a-cyber-attack/backing-up-data'
+  },
+  b2: {
+    heading: 'Store backups separately from your main device',
+    text: 'Keep at least one backup offsite or in the cloud (e.g., Backblaze, OneDrive, Google Drive). A backup on the same device or network as your main data can be lost in a ransomware attack.',
+    priority: 'high',
+    link: 'https://www.cyber.gov.au/protect-yourself/recovering-from-a-cyber-attack/backing-up-data'
+  },
+  b3: {
+    heading: 'Test your backups regularly',
+    text: 'Schedule a restore test every quarter. Verify that your files are intact and that you can actually recover from the backup. An untested backup provides false confidence.',
+    priority: 'medium',
+    link: 'https://www.cyber.gov.au/protect-yourself/recovering-from-a-cyber-attack/backing-up-data'
+  },
+  ph1: {
+    heading: 'Learn to spot phishing attempts',
+    text: 'Be suspicious of unexpected emails, SMS, or calls asking for credentials, payments, or personal info. Look for urgency, generic greetings, and mismatched sender addresses or domains.',
+    priority: 'high',
+    link: 'https://www.cyber.gov.au/protect-yourself/learn-about-cyber-threats/phishing'
+  },
+  ph2: {
+    heading: 'Verify before you click',
+    text: 'Hover over links to preview the real URL before clicking. Go directly to websites by typing addresses into your browser rather than clicking links in emails or messages.',
+    priority: 'high',
+    link: 'https://www.cyber.gov.au/protect-yourself/learn-about-cyber-threats/phishing'
+  },
+  ph3: {
+    heading: 'Invest in security awareness training',
+    text: 'Regular training (even free online resources) significantly reduces risk. Consider free options like the ACSC\'s Cyber Wardens program or phishing simulation tools for your team.',
+    priority: 'medium',
+    link: 'https://www.cyberwardens.com.au'
+  },
+  a1: {
+    heading: 'Apply the principle of least privilege',
+    text: 'Review who has admin rights and remove what\'s unnecessary. Most day-to-day tasks don\'t require admin access. Standard user accounts limit the blast radius of any compromise.',
+    priority: 'medium',
+    link: 'https://www.cyber.gov.au/resources-business-and-government/essential-cyber-security/essential-eight'
+  },
+  a2: {
+    heading: 'Promptly revoke access when people leave',
+    text: 'Create an offboarding checklist that includes deactivating accounts across all systems, revoking VPN access, recovering devices, and changing shared passwords immediately.',
+    priority: 'high',
+    link: 'https://www.cyber.gov.au'
+  },
+  a3: {
+    heading: 'Audit third-party app permissions',
+    text: 'Review which apps have OAuth or API access to your accounts (Google, Microsoft 365, etc.). Revoke access for apps you no longer use. Check settings > connected apps or integrations.',
+    priority: 'low',
+    link: 'https://www.cyber.gov.au'
+  }
+};
+
+/* ═══════════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════════ */
+let userProfile    = null;
+let currentCatIdx  = 0;
+let answers        = {};   // { questionId: 'Yes'|'No'|'Not Sure'|'N/A' }
+
+/* ═══════════════════════════════════════════════════════
+   WELCOME LOGIC
+═══════════════════════════════════════════════════════ */
+function selectProfile(el) {
+  document.querySelectorAll('.profile-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  userProfile = el.dataset.profile;
+  document.getElementById('btn-start').disabled = false;
+}
+
+function startAssessment() {
+  currentCatIdx = 0;
+  answers = {};
+  showScreen('screen-assessment');
+  renderCategory(0);
+}
+
+/* ═══════════════════════════════════════════════════════
+   ASSESSMENT LOGIC
+═══════════════════════════════════════════════════════ */
+function renderCategory(idx) {
+  const cat = CATEGORIES[idx];
+  const totalQ = CATEGORIES.reduce((s, c) => s + c.questions.length, 0);
+  const doneQ  = CATEGORIES.slice(0, idx).reduce((s, c) => s + c.questions.length, 0);
+  const pct    = Math.round((doneQ / totalQ) * 100);
+
+  document.getElementById('progress-fill').style.width  = pct + '%';
+  document.getElementById('progress-label').textContent = `Category ${idx + 1} of ${CATEGORIES.length}`;
+  document.getElementById('progress-q').textContent     = `Question ${doneQ + 1}–${doneQ + cat.questions.length} of ${totalQ}`;
+  document.getElementById('cat-icon').textContent       = cat.icon;
+  document.getElementById('cat-name').textContent       = cat.name;
+  document.getElementById('cat-sub').textContent        = cat.sub;
+
+  document.getElementById('btn-prev').style.visibility = idx === 0 ? 'hidden' : 'visible';
+  document.getElementById('btn-next').textContent = idx === CATEGORIES.length - 1 ? 'See Results →' : 'Next →';
+
+  const container = document.getElementById('questions-container');
+  container.innerHTML = '';
+
+  cat.questions.forEach((q, qi) => {
+    const globalQNum = doneQ + qi + 1;
+    const card = document.createElement('div');
+    card.className = 'question-card';
+    card.id = 'qcard-' + q.id;
+
+    const aClass  = q.answers.length > 3 ? 'answers four-col' : 'answers';
+    const btnHtml = q.answers.map(a => {
+      const sel     = answers[q.id] === a ? 'selected' : '';
+      const kind    = a === 'Yes' ? 'yes' : a === 'No' ? 'no' : a === 'Not Sure' ? 'unsure' : 'na';
+      return `<button class="answer-btn ${kind} ${sel}" onclick="selectAnswer('${q.id}','${a}',this,'${aClass}')">${a}</button>`;
+    }).join('');
+
+    card.innerHTML = `
+      <div class="q-number">Q${globalQNum}</div>
+      <div class="q-text">${q.text}</div>
+      <div class="q-help">${q.help}</div>
+      <div class="${aClass}" id="answers-${q.id}">${btnHtml}</div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function selectAnswer(qId, value, btn, groupClass) {
+  answers[qId] = value;
+  const parent = document.getElementById('answers-' + qId);
+  parent.querySelectorAll('.answer-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+function nextCategory() {
+  // validate all questions in current category answered
+  const cat = CATEGORIES[currentCatIdx];
+  const unanswered = cat.questions.filter(q => answers[q.id] === undefined);
+  if (unanswered.length > 0) {
+    // highlight first unanswered
+    const card = document.getElementById('qcard-' + unanswered[0].id);
+    card.style.borderColor = 'var(--danger)';
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setTimeout(() => card.style.borderColor = '', 2000);
+    return;
+  }
+
+  if (currentCatIdx < CATEGORIES.length - 1) {
+    currentCatIdx++;
+    renderCategory(currentCatIdx);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } else {
+    showResults();
+  }
+}
+
+function prevCategory() {
+  if (currentCatIdx > 0) {
+    currentCatIdx--;
+    renderCategory(currentCatIdx);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   SCORING
+═══════════════════════════════════════════════════════ */
+const SCORE_MAP = { 'Yes': 2, 'Not Sure': 1, 'No': 0, 'N/A': null };
+
+function scoreQuestion(qId) {
+  const v = answers[qId];
+  return v === undefined ? null : SCORE_MAP[v];
+}
+
+function categoryScore(cat) {
+  let earned = 0, possible = 0;
+  cat.questions.forEach(q => {
+    const s = scoreQuestion(q.id);
+    if (s !== null) { earned += s; possible += 2; }
+  });
+  return { earned, possible, pct: possible > 0 ? Math.round((earned / possible) * 100) : 0 };
+}
+
+function totalScore() {
+  let earned = 0, possible = 0;
+  CATEGORIES.forEach(cat => {
+    const cs = categoryScore(cat);
+    earned   += cs.earned;
+    possible += cs.possible;
+  });
+  return { earned, possible, pct: possible > 0 ? Math.round((earned / possible) * 100) : 0 };
+}
+
+function maturityLevel(pct) {
+  if (pct >= 85) return { label: 'Excellent',      color: '#00ff88', bg: 'rgba(0,255,136,.12)',  desc: 'You have strong cyber hygiene across the key areas. Keep monitoring and refining your practices as threats evolve.' };
+  if (pct >= 67) return { label: 'Good',            color: '#00e5ff', bg: 'rgba(0,229,255,.12)',  desc: 'Your security posture is solid in many areas. A few targeted improvements will significantly reduce your remaining risk.' };
+  if (pct >= 34) return { label: 'Needs Work',      color: '#ffb400', bg: 'rgba(255,180,0,.12)',  desc: 'You have some protections in place, but meaningful gaps remain. Prioritise the action plan below to reduce your exposure.' };
+               return { label: 'Needs Attention',  color: '#ff4560', bg: 'rgba(255,69,96,.12)',   desc: 'Your current security posture leaves you significantly exposed. Start with the high-priority actions below — many are free and quick to implement.' };
+}
+
+/* ═══════════════════════════════════════════════════════
+   RESULTS
+═══════════════════════════════════════════════════════ */
+function showResults() {
+  showScreen('screen-results');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  const ts  = totalScore();
+  const mat = maturityLevel(ts.pct);
+
+  // Animate ring
+  const circumference = 408;
+  const offset        = circumference - (circumference * ts.pct / 100);
+  const ringFill      = document.getElementById('ring-fill');
+  ringFill.style.stroke          = mat.color;
+  ringFill.style.strokeDasharray = circumference;
+  setTimeout(() => { ringFill.style.strokeDashoffset = offset; }, 100);
+
+  // Animate counter
+  animateCounter('score-pct', 0, ts.pct, 1200, v => v + '%');
+  document.getElementById('score-pts').textContent = `${ts.earned}/${ts.possible} pts`;
+
+  // Maturity badge
+  const badge = document.getElementById('maturity-badge');
+  badge.textContent = '● ' + mat.label;
+  badge.style.background = mat.bg;
+  badge.style.color       = mat.color;
+  badge.style.border      = `1px solid ${mat.color}44`;
+
+  document.getElementById('results-heading').textContent = `Your Cyber Health: ${mat.label}`;
+  document.getElementById('results-desc').textContent    = mat.desc;
+
+  // Category scores
+  const catScoresEl = document.getElementById('cat-scores');
+  catScoresEl.innerHTML = '';
+  CATEGORIES.forEach(cat => {
+    const cs  = categoryScore(cat);
+    const col = cs.pct >= 75 ? '#00ff88' : cs.pct >= 50 ? '#00e5ff' : cs.pct >= 25 ? '#ffb400' : '#ff4560';
+    catScoresEl.innerHTML += `
+      <div class="cat-score-row">
+        <div class="csr-icon">${cat.icon}</div>
+        <div class="csr-info">
+          <div class="csr-name">${cat.name}</div>
+          <div class="csr-bar-wrap">
+            <div class="csr-bar" id="bar-${cat.id}" style="width:0%;background:${col}"></div>
+          </div>
+        </div>
+        <div class="csr-pct">${cs.pct}%</div>
+      </div>`;
+  });
+  setTimeout(() => {
+    CATEGORIES.forEach(cat => {
+      const cs = categoryScore(cat);
+      document.getElementById('bar-' + cat.id).style.width = cs.pct + '%';
+    });
+  }, 200);
+
+  // Recommendations — for any question answered 'No' or 'Not Sure'
+  const recoEl = document.getElementById('recommendations');
+  recoEl.innerHTML = '';
+  const priorities = { high: [], medium: [], low: [] };
+
+  CATEGORIES.forEach(cat => {
+    cat.questions.forEach(q => {
+      const ans = answers[q.id];
+      if (ans === 'No' || ans === 'Not Sure') {
+        const r = RECO_DB[q.id];
+        if (r) priorities[r.priority].push({ ...r, qId: q.id });
+      }
+    });
+  });
+
+  const allRecos = [...priorities.high, ...priorities.medium, ...priorities.low];
+
+  if (allRecos.length === 0) {
+    recoEl.innerHTML = `<div class="reco-card"><div class="rc-body"><div class="rc-heading">🎉 Outstanding!</div><div class="rc-text">You answered Yes to all applicable questions. Keep reviewing your security posture regularly as threats evolve.</div></div></div>`;
+  } else {
+    allRecos.forEach(r => {
+      const iconMap  = { high: '🔴', medium: '🟡', low: '🟢' };
+      const classMap = { high: 'priority-high', medium: 'priority-medium', low: 'priority-low' };
+      recoEl.innerHTML += `
+        <div class="reco-card">
+          <div class="rc-priority ${classMap[r.priority]}">${iconMap[r.priority]}</div>
+          <div class="rc-body">
+            <div class="rc-heading">${r.heading}</div>
+            <div class="rc-text">${r.text}</div>
+            <a class="rc-link" href="${r.link}" target="_blank" rel="noopener">Learn more →</a>
+          </div>
+        </div>`;
+    });
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   UTILITIES
+═══════════════════════════════════════════════════════ */
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById(id);
+  el.classList.add('active');
+}
+
+function restartTool() {
+  answers = {};
+  userProfile = null;
+  currentCatIdx = 0;
+  document.querySelectorAll('.profile-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('btn-start').disabled = true;
+  showScreen('screen-welcome');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function animateCounter(id, from, to, duration, fmt) {
+  const el    = document.getElementById(id);
+  const start = performance.now();
+  function step(now) {
+    const p = Math.min((now - start) / duration, 1);
+    const e = p < 0.5 ? 2 * p * p : -1 + (4 - 2 * p) * p;
+    el.textContent = fmt(Math.round(from + (to - from) * e));
+    if (p < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+</script>
+</body>
+</html>
