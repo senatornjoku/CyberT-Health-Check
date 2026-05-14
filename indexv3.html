@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>CyberT Health Check</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --ink:        #060d18;
+  --ink2:       #0b1628;
+  --ink3:       #0f1f35;
+  --line:       #1a2e4a;
+  --line2:      #243d5c;
+  --blue:       #2563eb;
+  --blue-lt:    #3b82f6;
+  --cyan:       #06b6d4;
+  --cyan-lt:    #22d3ee;
+  --green:      #10b981;
+  --green-lt:   #34d399;
+  --amber:      #f59e0b;
+  --red:        #ef4444;
+  --red-lt:     #f87171;
+  --white:      #f0f6ff;
+  --muted:      #94a3b8;
+  --dimmer:     #475569;
+  --r:          10px;
+  --r2:         16px;
+  --head:       'Outfit',sans-serif;
+  --mono:       'DM Mono',monospace;
+  --shadow:     0 4px 24px rgba(0,0,0,.4);
+  --glow-blue:  0 0 32px rgba(37,99,235,.25);
+  --glow-cyan:  0 0 32px rgba(6,182,212,.25);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--mono);background:var(--ink);color:var(--white);min-height:100vh;overflow-x:hidden;line-height:1.6}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 60% at 10% 0%,rgba(37,99,235,.12) 0%,transparent 60%),radial-gradient(ellipse 60% 50% at 90% 100%,rgba(6,182,212,.09) 0%,transparent 60%),radial-gradient(ellipse 40% 40% at 50% 50%,rgba(16,185,129,.04) 0%,transparent 70%);pointer-events:none;z-index:0}
+body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:56px 56px;pointer-events:none;z-index:0}
+#root{position:relative;z-index:1;max-width:800px;margin:0 auto;padding:0 24px 100px}
+
+/* TOPBAR */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:24px 0 20px;border-bottom:1px solid var(--line);margin-bottom:40px}
+.logo{display:flex;align-items:center;gap:12px}
+.logo-icon{width:40px;height:40px;background:linear-gradient(135deg,var(--blue),var(--cyan));border-radius:10px;display:grid;place-items:center;font-family:var(--head);font-weight:900;font-size:16px;color:#fff;box-shadow:var(--glow-blue);flex-shrink:0}
+.logo-name{font-family:var(--head);font-weight:800;font-size:18px;color:var(--white);letter-spacing:-.3px}
+.logo-name em{color:var(--cyan-lt);font-style:normal}
+.topbar-tag{font-size:11px;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;display:flex;align-items:center;gap:6px}
+.dot-live{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* STEP INDICATOR */
+.step-track{display:flex;align-items:flex-start;margin-bottom:36px}
+.step-wrap{display:flex;flex-direction:column;align-items:center;flex-shrink:0}
+.step-connector{flex:1;padding-top:15px}
+.step-line{height:2px;background:var(--line);transition:background .4s}
+.step-line.done{background:var(--cyan)}
+.step-dot{width:32px;height:32px;border-radius:50%;border:2px solid var(--line2);background:var(--ink2);display:grid;place-items:center;font-family:var(--head);font-size:12px;font-weight:700;color:var(--dimmer);transition:all .3s;flex-shrink:0}
+.step-dot.done{border-color:var(--cyan);background:rgba(6,182,212,.15);color:var(--cyan)}
+.step-dot.active{border-color:var(--blue);background:linear-gradient(135deg,var(--blue),var(--cyan));color:#fff;box-shadow:var(--glow-blue)}
+.step-label{font-size:10px;color:var(--dimmer);text-align:center;margin-top:6px;letter-spacing:.5px;text-transform:uppercase;white-space:nowrap}
+
+/* SCREENS */
+.screen{display:none}
+.screen.active{display:block;animation:fadeIn .35s ease both}
+@keyframes fadeIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+
+/* HEADINGS */
+.screen-title{font-family:var(--head);font-weight:800;font-size:clamp(26px,5vw,40px);color:var(--white);line-height:1.15;letter-spacing:-.5px;margin-bottom:10px}
+.screen-title .accent{background:linear-gradient(90deg,var(--blue-lt),var(--cyan-lt));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.screen-sub{font-size:14px;color:var(--muted);max-width:560px;margin-bottom:32px;line-height:1.8}
+.chip{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line2);border-radius:99px;padding:4px 14px;font-size:11px;color:var(--cyan);letter-spacing:1px;text-transform:uppercase;margin-bottom:20px;background:rgba(6,182,212,.06)}
+
+/* INFO TRIO */
+.trio{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:40px}
+.trio-card{border:1px solid var(--line);border-radius:var(--r2);padding:22px 18px;background:var(--ink2);transition:border-color .2s,transform .2s}
+.trio-card:hover{border-color:var(--line2);transform:translateY(-2px)}
+.trio-icon{font-size:26px;margin-bottom:12px}
+.trio-label{font-family:var(--head);font-weight:700;font-size:14px;color:var(--white);margin-bottom:6px}
+.trio-sub{font-size:12px;color:var(--muted);line-height:1.6}
+
+/* PROFILE CARDS */
+.profile-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:36px}
+.prof-card{border:2px solid var(--line);border-radius:var(--r2);padding:26px 18px 22px;text-align:center;background:var(--ink2);cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+.prof-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(37,99,235,.08),rgba(6,182,212,.04));opacity:0;transition:opacity .2s}
+.prof-card:hover::before,.prof-card.selected::before{opacity:1}
+.prof-card:hover{border-color:var(--blue-lt);transform:translateY(-3px);box-shadow:var(--glow-blue)}
+.prof-card.selected{border-color:var(--cyan);background:var(--ink3);box-shadow:var(--glow-cyan)}
+.prof-card .check{position:absolute;top:12px;right:12px;width:20px;height:20px;border-radius:50%;background:var(--cyan);display:none;place-items:center;font-size:11px;color:#000}
+.prof-card.selected .check{display:grid}
+.pc-icon{font-size:34px;margin-bottom:12px}
+.pc-name{font-family:var(--head);font-weight:700;font-size:15px;color:var(--white);margin-bottom:5px}
+.pc-sub{font-size:12px;color:var(--muted);line-height:1.5}
+
+/* DISCLAIMER */
+.disc-box{border:1px solid var(--line2);border-radius:var(--r2);background:var(--ink2);padding:32px 36px;margin-bottom:28px;position:relative}
+.disc-box::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--amber),var(--red));border-radius:var(--r2) var(--r2) 0 0}
+.disc-head{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.disc-head-icon{width:44px;height:44px;border-radius:10px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);display:grid;place-items:center;font-size:22px;flex-shrink:0}
+.disc-head-title{font-family:var(--head);font-weight:700;font-size:20px;color:var(--white)}
+.disc-head-sub{font-size:12px;color:var(--muted)}
+.disc-body{font-size:13px;color:var(--muted);line-height:1.9;border-top:1px solid var(--line);padding-top:20px}
+.disc-body p+p{margin-top:12px}
+.disc-body strong{color:var(--white)}
+.agree-row{display:flex;align-items:flex-start;gap:14px;border:2px solid var(--line);border-radius:var(--r);padding:18px 20px;cursor:pointer;transition:border-color .2s,background .2s;background:var(--ink3)}
+.agree-row:hover{border-color:var(--blue-lt)}
+.agree-row.checked{border-color:var(--cyan);background:rgba(6,182,212,.06)}
+.agree-cb{width:22px;height:22px;border-radius:5px;border:2px solid var(--line2);background:var(--ink);display:grid;place-items:center;flex-shrink:0;margin-top:2px;transition:all .2s;font-size:13px;color:transparent}
+.agree-row.checked .agree-cb{border-color:var(--cyan);background:var(--cyan);color:#000}
+.agree-text{font-size:13px;color:var(--muted);line-height:1.7}
+.agree-text strong{color:var(--white)}
+
+/* ORG PROFILE FORM */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:28px}
+.form-field{display:flex;flex-direction:column;gap:8px}
+.form-field.full{grid-column:1/-1}
+.form-label{font-family:var(--head);font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.8px;text-transform:uppercase}
+.form-select{border:1.5px solid var(--line2);border-radius:var(--r);background:var(--ink2);color:var(--white);font-family:var(--mono);font-size:13px;padding:12px 42px 12px 16px;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2394a3b8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;cursor:pointer;transition:border-color .2s}
+.form-select:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px rgba(6,182,212,.1)}
+.form-select option{background:var(--ink3)}
+
+/* ASSESSMENT */
+.prog-row{display:flex;align-items:center;gap:16px;margin-bottom:32px}
+.prog-bar{flex:1;height:5px;background:var(--line);border-radius:99px;overflow:hidden}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--cyan));border-radius:99px;transition:width .5s cubic-bezier(.4,0,.2,1)}
+.prog-label{font-size:12px;color:var(--muted);white-space:nowrap}
+.cat-pill{display:inline-flex;align-items:center;gap:10px;border:1px solid var(--line2);border-radius:99px;padding:7px 18px 7px 8px;background:var(--ink2);margin-bottom:24px}
+.cat-pill-icon{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,rgba(37,99,235,.3),rgba(6,182,212,.2));display:grid;place-items:center;font-size:15px}
+.cat-pill-name{font-family:var(--head);font-weight:600;font-size:13px;color:var(--white)}
+.cat-pill-ct{font-size:11px;color:var(--dimmer);margin-left:4px}
+
+/* QUESTION CARDS */
+.q-card{border:1.5px solid var(--line);border-radius:var(--r2);background:var(--ink2);padding:26px 28px;margin-bottom:14px;transition:border-color .25s,box-shadow .25s}
+.q-card:focus-within{border-color:rgba(37,99,235,.4)}
+.q-num{font-size:11px;color:var(--dimmer);letter-spacing:1px;margin-bottom:10px;text-transform:uppercase}
+.q-text{font-family:var(--head);font-weight:600;font-size:15px;color:var(--white);line-height:1.55;margin-bottom:8px}
+.q-hint{font-size:12px;color:var(--dimmer);line-height:1.65;margin-bottom:20px;padding-left:12px;border-left:2px solid var(--line2)}
+.ans-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.ans-btn{padding:11px 8px;border-radius:8px;border:1.5px solid var(--line);background:var(--ink3);color:var(--muted);font-family:var(--mono);font-size:12px;cursor:pointer;transition:all .15s;text-align:center}
+.ans-btn:hover{border-color:var(--blue-lt);color:var(--white)}
+.sel-yes{border-color:var(--green)!important;background:rgba(16,185,129,.1)!important;color:var(--green-lt)!important}
+.sel-no{border-color:var(--red)!important;background:rgba(239,68,68,.08)!important;color:var(--red-lt)!important}
+.sel-unsure{border-color:var(--amber)!important;background:rgba(245,158,11,.08)!important;color:var(--amber)!important}
+.sel-na{border-color:var(--dimmer)!important;background:rgba(71,85,105,.1)!important;color:var(--dimmer)!important}
+
+/* BUTTONS */
+.nav-row{display:flex;align-items:center;justify-content:space-between;margin-top:32px;gap:12px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:13px 26px;border-radius:9px;font-family:var(--head);font-weight:700;font-size:14px;cursor:pointer;border:none;transition:all .2s;white-space:nowrap}
+.btn-primary{background:linear-gradient(135deg,var(--blue),var(--cyan));color:#fff;box-shadow:var(--glow-blue)}
+.btn-primary:hover{filter:brightness(1.12);box-shadow:0 0 40px rgba(37,99,235,.4);transform:translateY(-1px)}
+.btn-primary:disabled{opacity:.35;cursor:not-allowed;filter:none;transform:none;box-shadow:none}
+.btn-ghost{background:var(--ink2);color:var(--muted);border:1.5px solid var(--line2)}
+.btn-ghost:hover{border-color:var(--muted);color:var(--white)}
+
+/* RESULTS */
+.results-hero{text-align:center;padding:44px 0 40px;border-bottom:1px solid var(--line);margin-bottom:40px}
+.ring-wrap{width:180px;height:180px;margin:0 auto 24px;position:relative}
+.ring-wrap svg{width:100%;height:100%;transform:rotate(-90deg)}
+circle{fill:none;stroke-width:12}
+.ring-track{stroke:var(--ink3)}
+.ring-fill{stroke-dasharray:480;stroke-dashoffset:480;stroke-linecap:round;transition:stroke-dashoffset 1.6s cubic-bezier(.4,0,.2,1) .2s,stroke .3s}
+.ring-label{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring-pct{font-family:var(--head);font-weight:900;font-size:40px;color:var(--white);line-height:1}
+.ring-pts{font-size:12px;color:var(--dimmer);margin-top:4px}
+.mat-pill{display:inline-flex;align-items:center;gap:8px;border-radius:99px;padding:7px 20px;font-family:var(--head);font-weight:700;font-size:15px;margin-bottom:18px;border:1.5px solid transparent}
+.r-title{font-family:var(--head);font-weight:800;font-size:30px;color:var(--white);margin-bottom:12px}
+.r-desc{font-size:13px;color:var(--muted);max-width:500px;margin:0 auto;line-height:1.8}
+
+/* CAT SCORES */
+.cat-scores-grid{display:grid;gap:10px;margin-bottom:40px}
+.cat-row{display:flex;align-items:center;gap:16px;background:var(--ink2);border:1px solid var(--line);border-radius:var(--r2);padding:16px 20px}
+.cat-row-icon{font-size:22px;flex-shrink:0}
+.cat-row-body{flex:1}
+.cat-row-name{font-family:var(--head);font-weight:600;font-size:13px;color:var(--white);margin-bottom:8px}
+.cat-bar-wrap{height:5px;background:var(--ink3);border-radius:99px;overflow:hidden}
+.cat-bar{height:100%;border-radius:99px;transition:width 1.1s cubic-bezier(.4,0,.2,1) .4s}
+.cat-pct{font-size:12px;color:var(--muted);flex-shrink:0;width:40px;text-align:right}
+
+/* RECO */
+.reco-label{font-family:var(--head);font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--cyan);margin-bottom:16px}
+.reco-card{display:flex;gap:16px;align-items:flex-start;border:1px solid var(--line);border-radius:var(--r2);background:var(--ink2);padding:20px 22px;margin-bottom:12px;transition:border-color .2s}
+.reco-card:hover{border-color:var(--line2)}
+.reco-badge{width:32px;height:32px;border-radius:8px;display:grid;place-items:center;font-size:15px;flex-shrink:0}
+.badge-high{background:rgba(239,68,68,.12);color:var(--red-lt)}
+.badge-med{background:rgba(245,158,11,.12);color:var(--amber)}
+.badge-low{background:rgba(16,185,129,.12);color:var(--green-lt)}
+.reco-head{font-family:var(--head);font-weight:700;font-size:14px;color:var(--white);margin-bottom:5px}
+.reco-body{font-size:12px;color:var(--muted);line-height:1.7}
+.reco-link{display:inline-block;margin-top:7px;font-size:11px;color:var(--cyan-lt);text-decoration:none}
+.reco-link:hover{text-decoration:underline}
+
+/* ORG SUMMARY */
+.org-summary{display:flex;gap:24px;flex-wrap:wrap;background:var(--ink2);border:1px solid var(--line2);border-radius:var(--r);padding:16px 20px;margin-bottom:32px}
+.org-chip{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted)}
+.org-chip strong{color:var(--white)}
+
+/* FOOTER */
+footer{text-align:center;padding-top:60px;font-size:11px;color:var(--dimmer);line-height:2}
+
+@media(max-width:600px){
+  .trio,.profile-grid{grid-template-columns:1fr}
+  .form-grid{grid-template-columns:1fr}
+  .form-field.full{grid-column:1}
+  .ans-grid{grid-template-columns:repeat(2,1fr)}
+  .nav-row{flex-wrap:wrap}
+  .disc-box{padding:24px 18px}
+  .step-label{display:none}
+}
+@media print{
+  body{background:#fff;color:#000}
+  body::before,body::after{display:none}
+  .topbar,.step-track,.nav-row,.btn{display:none!important}
+  .reco-card,.cat-row{border-color:#ddd}
+}
+</style>
+</head>
+<body>
+<div id="root">
+
+<!-- TOP BAR -->
+<header class="topbar">
+  <div class="logo">
+    <div class="logo-icon">CT</div>
+    <div class="logo-name">Cyber<em>T</em> Health Check</div>
+  </div>
+  <div class="topbar-tag"><span class="dot-live"></span>Free &amp; Anonymous</div>
+</header>
+
+<!-- STEP TRACK -->
+<div class="step-track" id="step-track">
+  <div class="step-wrap">
+    <div class="step-dot active" id="sd-0">1</div>
+    <div class="step-label">Profile</div>
+  </div>
+  <div class="step-connector"><div class="step-line" id="sl-0"></div></div>
+  <div class="step-wrap">
+    <div class="step-dot" id="sd-1">2</div>
+    <div class="step-label">Disclaimer</div>
+  </div>
+  <div class="step-connector"><div class="step-line" id="sl-1"></div></div>
+  <div class="step-wrap">
+    <div class="step-dot" id="sd-2">3</div>
+    <div class="step-label" id="sl2-lbl">About You</div>
+  </div>
+  <div class="step-connector"><div class="step-line" id="sl-2"></div></div>
+  <div class="step-wrap">
+    <div class="step-dot" id="sd-3">4</div>
+    <div class="step-label">Assessment</div>
+  </div>
+  <div class="step-connector"><div class="step-line" id="sl-3"></div></div>
+  <div class="step-wrap">
+    <div class="step-dot" id="sd-4">5</div>
+    <div class="step-label">Results</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN 0 · WELCOME
+══════════════════════════════════ -->
+<section class="screen active" id="sc-welcome">
+  <div class="chip">⚡ Free · Anonymous · Under 5 Minutes</div>
+  <h1 class="screen-title">How cyber secure<br><span class="accent">are you really?</span></h1>
+  <p class="screen-sub">CyberT Health Check is a free, anonymous self-assessment that gives you a clear picture of your cyber security posture — and a prioritised, personalised action plan to improve it.</p>
+
+  <div class="trio">
+    <div class="trio-card"><div class="trio-icon">🔒</div><div class="trio-label">100% Anonymous</div><div class="trio-sub">No personal data collected. All processing stays entirely on your device.</div></div>
+    <div class="trio-card"><div class="trio-icon">⚡</div><div class="trio-label">Under 5 Minutes</div><div class="trio-sub">Plain-English questions across the key cyber security areas.</div></div>
+    <div class="trio-card"><div class="trio-icon">📋</div><div class="trio-label">Tailored Plan</div><div class="trio-sub">Prioritised recommendations personalised to your profile.</div></div>
+  </div>
+
+  <p class="screen-sub" style="margin-bottom:16px"><strong style="color:var(--white)">Who is completing this assessment?</strong></p>
+  <div class="profile-grid">
+    <div class="prof-card" data-p="individual" onclick="selectProfile(this)">
+      <div class="check">✓</div>
+      <div class="pc-icon">👤</div>
+      <div class="pc-name">Individual</div>
+      <div class="pc-sub">For personal devices, accounts &amp; home networks</div>
+    </div>
+    <div class="prof-card" data-p="business" onclick="selectProfile(this)">
+      <div class="check">✓</div>
+      <div class="pc-icon">🏢</div>
+      <div class="pc-name">Small Business</div>
+      <div class="pc-sub">For businesses with up to 100 employees</div>
+    </div>
+    <div class="prof-card" data-p="nfp" onclick="selectProfile(this)">
+      <div class="check">✓</div>
+      <div class="pc-icon">🤝</div>
+      <div class="pc-name">Not-for-Profit</div>
+      <div class="pc-sub">For NFPs, charities &amp; community organisations</div>
+    </div>
+  </div>
+  <div class="nav-row" style="justify-content:flex-end">
+    <button class="btn btn-primary" id="btn-w-next" disabled onclick="goTo('sc-disclaimer')">Continue →</button>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════
+     SCREEN 1 · DISCLAIMER
+══════════════════════════════════ -->
+<section class="screen" id="sc-disclaimer">
+  <h1 class="screen-title">Before you begin</h1>
+  <p class="screen-sub">Please read and acknowledge the disclaimer below before proceeding with your assessment.</p>
+
+  <div class="disc-box">
+    <div class="disc-head">
+      <div class="disc-head-icon">⚠️</div>
+      <div>
+        <div class="disc-head-title">Important Disclaimer</div>
+        <div class="disc-head-sub">Please read carefully before proceeding</div>
+      </div>
+    </div>
+    <div class="disc-body">
+      <p><strong>This tool provides general guidance to help you improve cyber security.</strong> It does not provide a comprehensive assessment of all aspects of cyber security, nor should it be relied on as such. Its focus is to identify areas of high priority for awareness building and remediation.</p>
+      <p>It provides you with a quick and easy assessment to help improve your cyber security. <strong>This assessment does not substitute the services of a cyber security expert.</strong></p>
+      <p>Results are indicative only. No data entered is transmitted from your device — all processing occurs entirely within your browser.</p>
+    </div>
+  </div>
+
+  <div class="agree-row" id="agree-row" onclick="toggleAgree()">
+    <div class="agree-cb" id="agree-cb"></div>
+    <div class="agree-text"><strong>I understand and agree to proceed.</strong> I acknowledge that this tool provides general guidance only and does not substitute a professional cyber security assessment.</div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn btn-ghost" onclick="goTo('sc-welcome')">← Back</button>
+    <button class="btn btn-primary" id="btn-d-next" disabled onclick="goToProfile()">Start Assessment →</button>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════
+     SCREEN 2 · ORG PROFILE
+══════════════════════════════════ -->
+<section class="screen" id="sc-profile">
+  <h1 class="screen-title">About your <span class="accent">organisation</span></h1>
+  <p class="screen-sub" id="profile-sub">These optional questions help tailor your results. Your responses are anonymous and stay on your device.</p>
+  <div class="form-grid" id="profile-fields"></div>
+  <div class="nav-row">
+    <button class="btn btn-ghost" onclick="goTo('sc-disclaimer')">← Back</button>
+    <button class="btn btn-primary" onclick="beginAssessment()">Begin Assessment →</button>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════
+     SCREEN 3 · ASSESSMENT
+══════════════════════════════════ -->
+<section class="screen" id="sc-assess">
+  <div class="prog-row">
+    <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+    <div class="prog-label" id="prog-lbl">0%</div>
+  </div>
+  <div class="cat-pill" id="cat-pill">
+    <div class="cat-pill-icon" id="cat-icon">🔑</div>
+    <div>
+      <span class="cat-pill-name" id="cat-name">Loading…</span>
+      <span class="cat-pill-ct" id="cat-ct"></span>
+    </div>
+  </div>
+  <div id="q-container"></div>
+  <div class="nav-row">
+    <button class="btn btn-ghost" id="btn-prev" onclick="prevCat()">← Back</button>
+    <button class="btn btn-primary" id="btn-next" onclick="nextCat()">Next →</button>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════
+     SCREEN 4 · RESULTS
+══════════════════════════════════ -->
+<section class="screen" id="sc-results">
+  <div class="results-hero">
+    <div class="ring-wrap">
+      <svg viewBox="0 0 180 180"><circle class="ring-track" cx="90" cy="90" r="76"/><circle class="ring-fill" cx="90" cy="90" r="76" id="ring-fill"/></svg>
+      <div class="ring-label">
+        <div class="ring-pct" id="r-pct">0%</div>
+        <div class="ring-pts" id="r-pts">–</div>
+      </div>
+    </div>
+    <div class="mat-pill" id="mat-pill">● –</div>
+    <div class="r-title" id="r-title">Your Results</div>
+    <p class="r-desc" id="r-desc"></p>
+  </div>
+
+  <div id="org-summary"></div>
+
+  <p class="reco-label" style="margin-bottom:20px">Score by Category</p>
+  <div class="cat-scores-grid" id="cat-scores"></div>
+
+  <p class="reco-label">Your Personalised Action Plan</p>
+  <div id="reco-list"></div>
+
+  <div class="nav-row" style="margin-top:36px">
+    <button class="btn btn-primary" onclick="window.print()">🖨 Print / Save Report</button>
+    <button class="btn btn-ghost" onclick="restartAll()">↺ Start Over</button>
+  </div>
+  <p style="text-align:center;font-size:11px;color:var(--dimmer);margin-top:12px">Your results stay in your browser only. Print or save as PDF to keep a copy.</p>
+
+  <div style="margin-top:40px;padding:20px 24px;border:1px solid var(--line);border-radius:var(--r2);font-size:12px;color:var(--dimmer);line-height:1.8">
+    <strong style="color:var(--muted)">Disclaimer:</strong> This tool provides general guidance to help you improve cyber security. It does not provide a comprehensive assessment of all aspects of cyber security, nor should it be relied on as such. Its focus is to identify areas of high priority for awareness building and remediation. It provides you with a quick and easy assessment to help improve your cyber security. This assessment does not substitute the services of a cyber security expert.
+  </div>
+</section>
+
+<footer>
+  <p>CyberT Health Check &nbsp;·&nbsp; Open Source &nbsp;·&nbsp; <a href="https://github.com" target="_blank" style="color:var(--cyan);text-decoration:none">View on GitHub</a></p>
+</footer>
+</div>
+
+<script>
+/* ────────────────────────────── STATE */
+let profile = null, agreed = false, orgData = {}, catIdx = 0, answers = {}, cats = [];
+
+/* ────────────────────────────── QUESTION DATA */
+const CATS_IND = [
+  {id:'ind_pwd',icon:'🔑',name:'Passwords & Authentication',questions:[
+    {id:'ip1',text:'Do you use a different, unique password for each of your important online accounts (e.g. email, banking, shopping)?',hint:'Reusing passwords means a single breach can expose every account using the same password.'},
+    {id:'ip2',text:'Do you use a password manager to create and store strong, unique passwords?',hint:'Password managers like Bitwarden (free) or 1Password generate strong passwords so you only need to remember one master password.'},
+    {id:'ip3',text:'Do you use multi-factor authentication (MFA) on your email, banking, and social media accounts?',hint:'MFA requires a second form of verification (e.g. an app code) making it much harder for attackers to access your accounts even with your password.'},
+  ]},
+  {id:'ind_dev',icon:'🛡️',name:'Device & Software Security',questions:[
+    {id:'id1',text:'Do you keep your devices (computer, phone, tablet) updated with the latest software and security patches?',hint:'Updates fix security vulnerabilities. Enable automatic updates to ensure you are always protected.'},
+    {id:'id2',text:'Do you use antivirus or security software on your computer?',hint:'Security software helps detect and block malware, ransomware, and other threats before they cause harm.'},
+    {id:'id3',text:'Do you avoid using public Wi-Fi for sensitive activities (banking, email) without a VPN?',hint:'Public Wi-Fi can be monitored by attackers. A VPN encrypts your traffic and protects your data.'},
+  ]},
+  {id:'ind_bkp',icon:'💾',name:'Backups & Data Protection',questions:[
+    {id:'ib1',text:'Do you regularly back up your important files, photos, and documents?',hint:'Regular backups protect you from ransomware, device failure, and accidental data loss.'},
+    {id:'ib2',text:'Are your backups stored separately from your main device (e.g. cloud storage or external drive)?',hint:'A backup on the same device can be lost in the same incident. Keep at least one copy offsite or in the cloud.'},
+    {id:'ib3',text:'Have you tested that you can actually restore data from your backup?',hint:'An untested backup may be corrupted or incomplete. Verify it works before you need it.'},
+  ]},
+  {id:'ind_phi',icon:'🎣',name:'Phishing & Scam Awareness',questions:[
+    {id:'iph1',text:'Are you confident you can identify signs of phishing emails, scam text messages, or suspicious phone calls?',hint:'Look for urgency, mismatched sender addresses, unexpected requests for personal information, and suspicious links or attachments.'},
+    {id:'iph2',text:'Do you check links and sender addresses before clicking or responding to unexpected messages?',hint:'Hover over links to preview the destination URL. Type website addresses directly into your browser rather than clicking links in emails.'},
+    {id:'iph3',text:'Do you keep your personal information (address, phone, date of birth) private on social media?',hint:'Attackers use personal details found online to craft convincing, targeted phishing messages and bypass security questions.'},
+  ]},
+  {id:'ind_acc',icon:'🔐',name:'Account & Privacy Management',questions:[
+    {id:'ia1',text:'Do you regularly review the privacy settings on your social media accounts and apps?',hint:'Privacy settings often change after app updates. Periodic reviews help you control who can see your information.'},
+    {id:'ia2',text:'Do you monitor your accounts for unusual activity or unrecognised logins?',hint:'Many services offer login history and activity alerts. Enable them to detect unauthorised access early.'},
+    {id:'ia3',text:'Have you checked if your email or passwords have appeared in a known data breach (e.g. haveibeenpwned.com)?',hint:'Data breaches regularly expose credentials. Knowing when to change passwords can prevent further compromise.'},
+  ]},
+];
+
+const CATS_BIZ = [
+  {id:'biz_pwd',icon:'🔑',name:'Passwords & Authentication',questions:[
+    {id:'bp1',text:'Does your business use strong, unique passwords or passphrases for all business accounts (email, cloud services, banking, admin systems)?',hint:'Reused or weak passwords are among the most common initial attack vectors. A business-wide password policy should be in place and enforced.'},
+    {id:'bp2',text:'Does your business use a password manager to generate and securely store credentials?',hint:'Business password managers (e.g. 1Password Teams, Bitwarden Business) enable centralised management and secure sharing of credentials across your team.'},
+    {id:'bp3',text:'Is multi-factor authentication (MFA) enabled on business email, financial accounts, cloud services, and remote access systems?',hint:'MFA prevents the majority of credential-based attacks. Enforce it as a policy and use authenticator apps rather than SMS where possible.'},
+  ]},
+  {id:'biz_dev',icon:'🛡️',name:'Software & Device Security',questions:[
+    {id:'bd1',text:'Are all business devices (computers, laptops, mobiles) and software regularly updated with security patches?',hint:'Unpatched systems are a leading cause of breaches. Enable automatic updates and consider a patch management policy — especially for critical patches.'},
+    {id:'bd2',text:'Does your business use endpoint security software (antivirus/EDR) on all business devices, including staff personal devices used for work (BYOD)?',hint:'Endpoint security helps detect and respond to threats. Coverage should include any device that accesses business systems or data.'},
+    {id:'bd3',text:'Is your business network protected by a firewall, and do you use a separate guest Wi-Fi network for visitors?',hint:'A properly configured firewall and network segmentation reduces the risk of attackers moving laterally through your systems from a compromised device.'},
+  ]},
+  {id:'biz_bkp',icon:'💾',name:'Backups & Business Continuity',questions:[
+    {id:'bb1',text:'Does your business regularly back up critical data — including customer records, financial data, contracts, and operational files?',hint:'Follow the 3-2-1 rule: 3 copies of data, on 2 different media types, with 1 stored offsite or in isolated cloud storage.'},
+    {id:'bb2',text:'Are backups stored securely and separately from your primary systems — for example, in isolated cloud storage or an offsite physical location?',hint:'Ransomware targets connected backup systems. At least one backup copy should be air-gapped or in an access-controlled cloud account not permanently connected to your network.'},
+    {id:'bb3',text:'Has your business tested restoring from backups and do you have a documented business continuity or disaster recovery plan?',hint:'A recovery plan that has never been tested is unlikely to work under pressure. Schedule quarterly restore tests and document your recovery steps.'},
+  ]},
+  {id:'biz_phi',icon:'🎣',name:'Phishing & Staff Awareness',questions:[
+    {id:'bph1',text:'Do staff receive regular cyber security awareness training, including how to identify phishing emails, scam calls, and social engineering?',hint:'Human error causes the majority of breaches. Regular training — not just annual — significantly reduces susceptibility. Consider phishing simulations.'},
+    {id:'bph2',text:'Does your business have a clear, easy process for staff to report suspicious emails, calls, or potential security incidents?',hint:'A simple reporting process (e.g. a dedicated email address) ensures threats are flagged quickly. Make it blame-free — people need to feel safe reporting.'},
+    {id:'bph3',text:'Does your business use email security filtering including anti-spam, anti-phishing, and email authentication controls (SPF, DKIM, DMARC)?',hint:'Email authentication controls prevent attackers from spoofing your domain and reduce malicious email reaching staff. Your IT provider or email host can help configure these.'},
+  ]},
+  {id:'biz_acc',icon:'🔐',name:'Access Control & User Management',questions:[
+    {id:'ba1',text:'Are staff given only the minimum level of system access required to perform their job (the principle of least privilege)?',hint:'Admin rights should only be held by those who genuinely need them. Review access rights regularly — especially after role changes.'},
+    {id:'ba2',text:'Does your business promptly remove or disable system access when a staff member, contractor, or vendor relationship ends?',hint:'Stale accounts are a significant and frequently exploited risk. Use an offboarding checklist that includes deactivating all accounts across every system on the employee\'s last day.'},
+    {id:'ba3',text:'Does your business use separate administrator accounts for IT administration tasks rather than using admin-level accounts for everyday activities?',hint:'Using admin accounts for daily work increases the risk of credential theft. Standard user accounts should be used for email, browsing, and routine tasks.'},
+  ]},
+  {id:'biz_pol',icon:'📄',name:'Policies, Compliance & Incident Response',questions:[
+    {id:'bpo1',text:'Does your business have a documented cyber security policy covering acceptable use, data handling, remote working, and staff responsibilities?',hint:'A policy sets expectations for staff and provides a framework for decisions. It should be accessible to all staff, reviewed annually, and included in onboarding.'},
+    {id:'bpo2',text:'Does your business have a documented incident response plan that outlines the steps to take if a cyber attack or data breach occurs?',hint:'An incident response plan reduces response time and cost. Include contacts for IT support, the Australian Cyber Security Hotline (1300 CYBER1), legal counsel, and cyber insurance.'},
+    {id:'bpo3',text:'Does your business assess the cyber security practices of key third-party vendors, suppliers, or IT service providers?',hint:'Supply chain attacks are increasing. Ask vendors about their security controls, data handling practices, and incident notification obligations. Include security requirements in contracts.'},
+  ]},
+];
+
+const CATS_NFP = [
+  {id:'nfp_pwd',icon:'🔑',name:'Passwords & Authentication',questions:[
+    {id:'np1',text:'Does your organisation use strong, unique passwords or passphrases for all accounts — including email, donor platforms, social media, banking, and shared systems?',hint:'NFPs are targeted specifically because credential security is often weak. Enforce a password policy for all staff and regular volunteers.'},
+    {id:'np2',text:'Does your organisation use a password manager to generate and securely store credentials?',hint:'Password managers prevent the common practice of sharing passwords via email or spreadsheets. Bitwarden is free for small teams and offers a secure sharing feature.'},
+    {id:'np3',text:'Is multi-factor authentication (MFA) enabled on your organisation\'s email, financial systems, and social media accounts?',hint:'MFA is especially critical for NFPs whose social media accounts and email may be targeted to damage reputation, divert donations, or impersonate the organisation.'},
+  ]},
+  {id:'nfp_dev',icon:'🛡️',name:'Device & Software Security',questions:[
+    {id:'nd1',text:'Are the devices used by staff and regular volunteers — including personal devices used for organisational activities (BYOD) — kept updated with security patches?',hint:'Include personal devices in your update policy. Many NFPs overlook BYOD security. Unpatched devices are a common and easily exploited entry point.'},
+    {id:'nd2',text:'Does your organisation use security software (antivirus/anti-malware) on devices used for organisational activities?',hint:'Many vendors offer discounted or free licences for NFPs through programs like TechSoup. Windows Defender provides solid baseline protection at no cost.'},
+    {id:'nd3',text:'Is your organisation\'s network (office or shared workspace) protected by a firewall and a separate guest Wi-Fi network?',hint:'A separate guest network prevents visitors or compromised devices from accessing your internal systems, donor data, and beneficiary records.'},
+  ]},
+  {id:'nfp_bkp',icon:'💾',name:'Backups & Data Recovery',questions:[
+    {id:'nb1',text:'Does your organisation regularly back up important data — including donor records, financial files, beneficiary information, and program documentation?',hint:'Loss of donor or beneficiary data through ransomware or accidental deletion can be devastating for an NFP. Automate your backups so they occur without manual intervention.'},
+    {id:'nb2',text:'Are backups stored separately from primary systems — for example, in cloud storage or an offsite physical location?',hint:'Google Workspace and Microsoft 365 include backup capabilities for NFPs. Ensure at least one copy is isolated from your primary network in case of ransomware.'},
+    {id:'nb3',text:'Has your organisation tested restoring data from backups and documented a basic recovery procedure?',hint:'Document a simple restore procedure that any staff member can follow — not just your most technical person. Test it at least twice a year.'},
+  ]},
+  {id:'nfp_phi',icon:'🎣',name:'Phishing & Volunteer Awareness',questions:[
+    {id:'nph1',text:'Do staff and volunteers receive training or guidance on how to recognise phishing emails, scam calls, and social engineering attacks?',hint:'Volunteers change frequently and may not receive security induction. A brief one-page guide covering key warning signs can significantly reduce risk.'},
+    {id:'nph2',text:'Does your organisation have a clear and easy way for staff or volunteers to report suspicious messages or potential security incidents?',hint:'A simple, blame-free reporting process ensures incidents are flagged quickly. Designate a single point of contact and make it easy to reach them.'},
+    {id:'nph3',text:'Is your organisation aware of scams specifically targeting NFPs — such as fake invoice fraud, donation scams, or CEO/board member impersonation (Business Email Compromise)?',hint:'NFPs are specifically targeted by these scam types. Brief staff who handle payments and establish a verbal verification process for any changes to payment details or unusual financial requests.'},
+  ]},
+  {id:'nfp_acc',icon:'🔐',name:'Access Control & Volunteer Management',questions:[
+    {id:'na1',text:'Are staff and volunteers given only the system access they need for their specific role, and is this reviewed when roles change?',hint:'High volunteer turnover makes access drift a significant risk for NFPs. Apply least privilege and conduct access audits at least every 6 months.'},
+    {id:'na2',text:'Does your organisation promptly remove or deactivate system access when a staff member, volunteer, or board member finishes their role?',hint:'Include account deactivation on your offboarding checklist: email, shared drives, social media admin, donor platforms, and any other organisational systems.'},
+    {id:'na3',text:'Does your organisation use separate accounts or role-based access for different functions (e.g. finance, communications, program management)?',hint:'Role separation limits the damage if one account is compromised and helps maintain the integrity of sensitive donor and beneficiary records.'},
+  ]},
+  {id:'nfp_data',icon:'🗂️',name:'Data Protection & Donor Privacy',questions:[
+    {id:'nda1',text:'Does your organisation have a privacy policy governing how donor, beneficiary, and volunteer personal information is collected, stored, used, and protected?',hint:'A privacy policy is typically a legal requirement for organisations that collect personal information. It also builds essential trust with donors and beneficiaries.'},
+    {id:'nda2',text:'Is sensitive donor and beneficiary data stored securely in access-controlled systems — rather than in shared spreadsheets, personal email, or unsecured cloud storage?',hint:'Apply data minimisation: only collect what you need, store it securely with access controls, and delete it when it is no longer required.'},
+    {id:'nda3',text:'Does your organisation have a process for responding to a data breach — including notifying affected individuals and relevant authorities if required?',hint:'Many jurisdictions have mandatory data breach notification requirements (e.g. the Notifiable Data Breaches scheme in Australia). A documented response process reduces legal risk and protects those affected.'},
+  ]},
+];
+
+/* ────────────────────────────── RECOMMENDATIONS */
+const RDB = {
+  ip1:{h:'Use unique passwords for every account',t:'Start with email and banking — if these are compromised, attackers can reset every other account. Use a passphrase (4+ random words) or a password manager to generate strong, unique credentials.',p:'high',l:'https://www.cyber.gov.au/protect-yourself/securing-your-accounts/passphrases'},
+  ip2:{h:'Adopt a password manager',t:'Bitwarden is free and open-source. 1Password and Dashlane are also excellent. These tools generate and store strong passwords — you only need to remember one master password.',p:'high',l:'https://www.cyber.gov.au/protect-yourself/securing-your-accounts/passphrases'},
+  ip3:{h:'Enable Multi-Factor Authentication (MFA)',t:'Turn on MFA for email, banking, and social media first. Use an authenticator app (Authy, Google Authenticator) rather than SMS where available. This single step prevents most account takeover attacks.',p:'high',l:'https://www.cyber.gov.au/protect-yourself/securing-your-accounts/multi-factor-authentication'},
+  id1:{h:'Enable automatic software updates',t:'Set your OS and apps to update automatically. Most successful attacks exploit known vulnerabilities for which patches already exist. Don\'t delay updates.',p:'high',l:'https://www.cyber.gov.au/protect-yourself/securing-your-devices/how-update-your-device'},
+  id2:{h:'Install reputable security software',t:'Windows Defender (built into Windows 10/11) provides solid baseline protection at no cost. macOS has built-in protections — review and enable them in System Settings.',p:'medium',l:'https://www.cyber.gov.au/protect-yourself/securing-your-devices'},
+  id3:{h:'Protect yourself on public Wi-Fi',t:'Avoid banking or email on public Wi-Fi. If necessary, use a reputable VPN. Ensure your home router uses WPA2 or WPA3 encryption and change default router passwords.',p:'medium',l:'https://www.cyber.gov.au/protect-yourself/securing-your-devices'},
+  ib1:{h:'Set up regular automated backups',t:'Use your OS\'s built-in backup tool or cloud storage. Automate backups to run daily for important files. The 3-2-1 rule: 3 copies, on 2 different media, with 1 offsite or in the cloud.',p:'high',l:'https://www.cyber.gov.au/protect-yourself/recovering-from-a-cyber-attack/backing-up-data'},
+  ib2:{h:'Store backups separately from your device',t:'Use cloud storage (iCloud, Google Drive, OneDrive) AND an external hard drive stored separately. A backup on the same device can be lost in the same incident.',p:'high',l:'https://www.cyber.gov.au/protect-yourself/recovering-from-a-cyber-attack/backing-up-data'},
+  ib3:{h:'Test your backup — verify it actually works',t:'Try restoring a file from your backup every few months. An untested backup may be incomplete or corrupted. Don\'t find out it doesn\'t work when you actually need it.',p:'medium',l:'https://www.cyber.gov.au/protect-yourself/recovering-from-a-cyber-attack/backing-up-data'},
+  iph1:{h:'Learn to recognise phishing attacks',t:'Key red flags: unexpected urgency, requests for personal info or payment, mismatched sender email addresses, suspicious links. When in doubt, don\'t click — go directly to the official website.',p:'high',l:'https://www.cyber.gov.au/protect-yourself/learn-about-cyber-threats/phishing'},
+  iph2:{h:'Verify before you click',t:'Hover over links to preview the real destination URL. Type website addresses into your browser directly. Call organisations on their official number if you receive unexpected contact.',p:'high',l:'https://www.cyber.gov.au/protect-yourself/learn-about-cyber-threats/phishing'},
+  iph3:{h:'Minimise your public digital footprint',t:'Review privacy settings on all social media platforms. Limit who can see personal details. Attackers use public information to craft convincing targeted attacks and bypass security questions.',p:'low',l:'https://www.cyber.gov.au/protect-yourself/learn-about-cyber-threats/phishing'},
+  ia1:{h:'Review app permissions and privacy settings',t:'Regularly check connected apps in your Google/Microsoft/Apple account settings and revoke any you no longer use. Privacy settings often reset after app updates.',p:'low',l:'https://www.cyber.gov.au/protect-yourself/securing-your-accounts'},
+  ia2:{h:'Monitor your accounts for suspicious activity',t:'Enable login notifications and activity alerts on important accounts. Check your email\'s login history periodically. Consider Google Alerts for your name.',p:'medium',l:'https://www.cyber.gov.au/protect-yourself/securing-your-accounts'},
+  ia3:{h:'Check for data breach exposure',t:'Visit haveibeenpwned.com and enter your email address(es). If your credentials appear in a breach, change affected passwords immediately and enable MFA on those accounts.',p:'medium',l:'https://haveibeenpwned.com'},
+  bp1:{h:'Enforce a business-wide password policy',t:'Implement a policy requiring strong, unique passphrases for all business accounts. Consider a company-managed password manager to standardise this across your team and reduce reliance on memory.',p:'high',l:'https://www.cyber.gov.au/protect-yourself/securing-your-accounts/passphrases'},
+  bp2:{h:'Deploy a business password manager',t:'1Password Teams, Bitwarden Business, or Keeper provide centralised credential management, secure team sharing, and policy enforcement. This eliminates password reuse and email-based credential sharing.',p:'high',l:'https://www.cyber.gov.au/protect-yourself/securing-your-accounts/passphrases'},
+  bp3:{h:'Mandate MFA on all business-critical systems',t:'Prioritise email, cloud storage (M365/Google Workspace), financial systems, and remote access (VPN). Enforce it as a policy. Use authenticator apps — they are more secure than SMS-based MFA.',p:'high',l:'https://www.cyber.gov.au/protect-yourself/securing-your-accounts/multi-factor-authentication'},
+  bd1:{h:'Implement a patch management process',t:'Enable automatic updates for operating systems and critical software. For business environments, define a patch policy: critical patches within 48 hours, others within 2 weeks. Include third-party applications.',p:'high',l:'https://www.cyber.gov.au/resources-business-and-government/essential-cyber-security/essential-eight/patch-applications'},
+  bd2:{h:'Deploy endpoint security on all business devices',t:'Ensure all business devices and BYOD devices have up-to-date endpoint security. Consider Endpoint Detection and Response (EDR) solutions for enhanced visibility and incident response capability.',p:'high',l:'https://www.cyber.gov.au/protect-yourself/securing-your-devices/antivirus-software'},
+  bd3:{h:'Secure your business network',t:'Configure your router/firewall, create a separate guest Wi-Fi for visitors, and enforce VPN use for remote workers accessing business systems. Consider a network security review by a trusted IT provider.',p:'medium',l:'https://www.cyber.gov.au/resources-business-and-government/essential-cyber-security/small-business-cyber-security'},
+  bb1:{h:'Implement the 3-2-1 backup strategy',t:'3 copies of data, on 2 different media types, with 1 offsite. Automate daily backups of critical data. Include customer records, financial data, contracts, emails, and system configurations.',p:'high',l:'https://www.cyber.gov.au/protect-yourself/recovering-from-a-cyber-attack/backing-up-data'},
+  bb2:{h:'Isolate backups from your primary network',t:'Ransomware targets connected backups. Ensure at least one copy is stored in an isolated, access-controlled cloud account or air-gapped media that is not permanently accessible from your network.',p:'high',l:'https://www.cyber.gov.au/protect-yourself/recovering-from-a-cyber-attack/backing-up-data'},
+  bb3:{h:'Test your backups and document a recovery plan',t:'Schedule quarterly restore tests. Document step-by-step recovery procedures for critical systems. Your plan should include contact lists, system recovery order, and communication templates for staff and customers.',p:'medium',l:'https://www.cyber.gov.au/protect-yourself/recovering-from-a-cyber-attack'},
+  bph1:{h:'Provide regular staff security awareness training',t:'Annual training is insufficient. Provide quarterly short sessions and phishing simulations. Free resources include the ACSC\'s Cyber Wardens program and the Small Business Cyber Security Guide.',p:'high',l:'https://www.cyberwardens.com.au'},
+  bph2:{h:'Create a clear incident reporting process',t:'Designate a contact for staff to report suspicious activity. Make it easy, visible, and blameless. The faster incidents are reported, the less damage they cause and the lower your recovery cost.',p:'medium',l:'https://www.cyber.gov.au/resources-business-and-government/essential-cyber-security/small-business-cyber-security'},
+  bph3:{h:'Implement email authentication (SPF, DKIM, DMARC)',t:'Work with your IT provider or email host to configure SPF, DKIM, and DMARC records. These controls prevent attackers from spoofing your business domain and reduce phishing email reaching staff inboxes.',p:'high',l:'https://www.cyber.gov.au/resources-business-and-government/essential-cyber-security/small-business-cyber-security'},
+  ba1:{h:'Apply the principle of least privilege',t:'Audit who holds admin rights and remove access that is not genuinely required for day-to-day tasks. Standard user accounts significantly limit the blast radius of a compromised account.',p:'medium',l:'https://www.cyber.gov.au/resources-business-and-government/essential-cyber-security/essential-eight/restrict-admin-privileges'},
+  ba2:{h:'Formalise your staff offboarding checklist',t:'On an employee\'s last day: disable all accounts (email, cloud, CRM, banking, VPN), recover devices, and change any shared passwords. This should be a documented, mandatory process.',p:'high',l:'https://www.cyber.gov.au/resources-business-and-government/essential-cyber-security/small-business-cyber-security'},
+  ba3:{h:'Use dedicated admin accounts for privileged tasks',t:'IT admins should use a separate admin account for system administration and a standard account for daily work. This limits the impact of credential theft or malware infection.',p:'medium',l:'https://www.cyber.gov.au/resources-business-and-government/essential-cyber-security/essential-eight/restrict-admin-privileges'},
+  bpo1:{h:'Develop a clear cyber security policy',t:'Document acceptable use, data classification, remote working rules, and staff responsibilities. Write it in plain language, brief new staff on it during onboarding, and review it annually.',p:'medium',l:'https://www.cyber.gov.au/resources-business-and-government/essential-cyber-security/small-business-cyber-security'},
+  bpo2:{h:'Create and practise an incident response plan',t:'Your plan should cover: detection, containment, eradication, recovery, and post-incident review. Include contacts for IT support, the ACSC Hotline (1300 CYBER1), legal counsel, and cyber insurance. Run a tabletop exercise annually.',p:'high',l:'https://www.cyber.gov.au/protect-yourself/recovering-from-a-cyber-attack'},
+  bpo3:{h:'Assess your third-party and supply chain risk',t:'Ask key vendors about their security controls, data handling, and incident notification obligations. Include security clauses in contracts. Review and restrict third-party access to your systems.',p:'medium',l:'https://www.cyber.gov.au/resources-business-and-government/essential-cyber-security/small-business-cyber-security'},
+  np1:{h:'Enforce a password policy across staff and volunteers',t:'Implement and communicate a password policy for all staff and regular volunteers. Use passphrases or a password manager. Include password security in volunteer induction materials.',p:'high',l:'https://www.cyber.gov.au/protect-yourself/securing-your-accounts/passphrases'},
+  np2:{h:'Adopt a shared password manager for your organisation',t:'Bitwarden is free for small teams and supports secure credential sharing. This eliminates the common practice of sharing passwords via email, messaging apps, or printed lists.',p:'high',l:'https://www.cyber.gov.au/protect-yourself/securing-your-accounts/passphrases'},
+  np3:{h:'Enable MFA on all key organisational accounts',t:'Your social media, email, and donor platforms are high-value targets. Enable MFA on all of them. This single control can prevent most account takeover attacks.',p:'high',l:'https://www.cyber.gov.au/protect-yourself/securing-your-accounts/multi-factor-authentication'},
+  nd1:{h:'Include volunteer devices in your update policy',t:'Establish a simple policy requiring staff and volunteers to keep their personal devices updated before accessing organisational systems. Unpatched devices are the most commonly exploited entry point.',p:'high',l:'https://www.cyber.gov.au/protect-yourself/securing-your-devices/how-update-your-device'},
+  nd2:{h:'Ensure all devices used for org work have security software',t:'Check eligibility for free or discounted tools through TechSoup or your software vendor\'s NFP program. Windows Defender provides solid baseline protection at no cost.',p:'medium',l:'https://www.cyber.gov.au/protect-yourself/securing-your-devices/antivirus-software'},
+  nd3:{h:'Secure your network and create a guest Wi-Fi',t:'Enable your router\'s firewall, use WPA2/WPA3 encryption, and create a separate guest network. This prevents visitors or compromised devices from accessing your internal systems and donor data.',p:'medium',l:'https://www.cyber.gov.au/resources-business-and-government/essential-cyber-security/small-business-cyber-security'},
+  nb1:{h:'Implement regular, automated backups',t:'Back up donor databases, financial records, program documentation, and critical communications. Cloud tools like Google Workspace and Microsoft 365 include backup features worth enabling.',p:'high',l:'https://www.cyber.gov.au/protect-yourself/recovering-from-a-cyber-attack/backing-up-data'},
+  nb2:{h:'Store backups separately from primary systems',t:'Ransomware targets connected backups. Keep at least one backup in an isolated cloud account or offline drive that is not permanently connected to your network.',p:'high',l:'https://www.cyber.gov.au/protect-yourself/recovering-from-a-cyber-attack/backing-up-data'},
+  nb3:{h:'Test your backups and document a recovery procedure',t:'Test restoring data at least twice a year. Document a simple, step-by-step recovery guide that any staff member — not just your most technical person — can follow under pressure.',p:'medium',l:'https://www.cyber.gov.au/protect-yourself/recovering-from-a-cyber-attack'},
+  nph1:{h:'Include cyber security in volunteer inductions',t:'Create a brief cyber security resource for new volunteers: password expectations, how to spot phishing, and how to report suspicious activity. Update it annually and keep it accessible.',p:'high',l:'https://www.cyberwardens.com.au'},
+  nph2:{h:'Establish a simple incident reporting process',t:'Designate a point of contact (IT support, CEO, or Office Manager) for reporting concerns. A simple, blame-free process ensures threats are flagged quickly and reduces the cost of incidents.',p:'medium',l:'https://www.cyber.gov.au/resources-business-and-government/essential-cyber-security/small-business-cyber-security'},
+  nph3:{h:'Brief staff on NFP-specific scam types',t:'NFPs are targeted by invoice redirection fraud, fake donation requests, and CEO/board member impersonation attacks. Brief anyone handling payments and establish a verbal verification process for financial requests.',p:'high',l:'https://www.cyber.gov.au/protect-yourself/learn-about-cyber-threats/phishing'},
+  na1:{h:'Apply least privilege and audit access regularly',t:'High volunteer turnover creates access drift risk. Conduct access reviews every 6 months. Remove access that is no longer needed and ensure role changes are reflected in system permissions immediately.',p:'medium',l:'https://www.cyber.gov.au/resources-business-and-government/essential-cyber-security/essential-eight/restrict-admin-privileges'},
+  na2:{h:'Formalise your offboarding checklist for all roles',t:'On a person\'s last day: disable email, remove social media admin, revoke donor platform access, remove from shared drives. This applies to staff, volunteers, and board members.',p:'high',l:'https://www.cyber.gov.au/resources-business-and-government/essential-cyber-security/small-business-cyber-security'},
+  na3:{h:'Implement role-based access for different functions',t:'A volunteer helping with communications should not have access to financial systems. Separate access to financial, donor, operational, and communications systems limits the damage from any single compromise.',p:'medium',l:'https://www.cyber.gov.au/resources-business-and-government/essential-cyber-security/essential-eight/restrict-admin-privileges'},
+  nda1:{h:'Develop and publish a privacy policy',t:'A privacy policy is typically a legal requirement for organisations that collect personal information. Templates are available from your state or territory privacy regulator. It also builds trust with donors and beneficiaries.',p:'high',l:'https://www.oaic.gov.au/privacy/privacy-guidance-for-organisations-and-government-agencies/getting-started/privacy-for-small-business'},
+  nda2:{h:'Secure sensitive donor and beneficiary data',t:'Move sensitive data out of shared spreadsheets and personal email into access-controlled systems. Apply data minimisation — only collect what you need, and delete it when it is no longer required.',p:'high',l:'https://www.oaic.gov.au/privacy/privacy-guidance-for-organisations-and-government-agencies/getting-started/privacy-for-small-business'},
+  nda3:{h:'Prepare a data breach response procedure',t:'Identify your notification obligations (e.g. Notifiable Data Breaches scheme in Australia). Create a checklist: containment, assessment, notification, and post-incident review. Brief key staff on it annually.',p:'medium',l:'https://www.oaic.gov.au/privacy/notifiable-data-breaches'},
+};
+
+/* ────────────────────────────── SCREENS */
+const ALL_SCREENS = ['sc-welcome','sc-disclaimer','sc-profile','sc-assess','sc-results'];
+const SCREEN_STEP = {'sc-welcome':0,'sc-disclaimer':1,'sc-profile':2,'sc-assess':3,'sc-results':4};
+
+function goTo(id){
+  ALL_SCREENS.forEach(s=>document.getElementById(s).classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  updateSteps(SCREEN_STEP[id]??-1);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function updateSteps(active){
+  for(let i=0;i<=4;i++){
+    const d=document.getElementById('sd-'+i);
+    d.classList.remove('active','done');
+    if(i<active){d.classList.add('done');d.textContent='✓';}
+    else if(i===active){d.classList.add('active');d.textContent=i+1;}
+    else d.textContent=i+1;
+    if(i<4) document.getElementById('sl-'+i).classList.toggle('done',i<active);
+  }
+}
+
+/* ────────────────────────────── WELCOME */
+function selectProfile(el){
+  document.querySelectorAll('.prof-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+  profile=el.dataset.p;
+  document.getElementById('btn-w-next').disabled=false;
+}
+
+/* ────────────────────────────── DISCLAIMER */
+function toggleAgree(){
+  agreed=!agreed;
+  document.getElementById('agree-row').classList.toggle('checked',agreed);
+  document.getElementById('agree-cb').textContent=agreed?'✓':'';
+  document.getElementById('btn-d-next').disabled=!agreed;
+}
+
+function goToProfile(){
+  if(profile==='individual'){
+    document.getElementById('sl2-lbl').textContent='Assessment';
+    cats=CATS_IND; catIdx=0; answers={};
+    goTo('sc-assess');
+    renderCat(0);
+  } else {
+    document.getElementById('sl2-lbl').textContent='Your Org';
+    buildOrgForm();
+    goTo('sc-profile');
+  }
+}
+
+/* ────────────────────────────── ORG PROFILE */
+function buildOrgForm(){
+  const isBiz=profile==='business';
+  document.getElementById('profile-sub').textContent=
+    isBiz?'These optional questions help tailor your results to your business context. All responses are anonymous and stay on your device.'
+         :'These optional questions help tailor your results to your organisation\'s context. All responses are anonymous and stay on your device.';
+
+  const f=document.getElementById('profile-fields');
+  f.innerHTML=`
+  <div class="form-field">
+    <label class="form-label">Organisation Size</label>
+    <select class="form-select" id="f-size">
+      <option value="">— Select —</option>
+      <option>Sole trader / 1 person</option>
+      <option>2–4 employees/volunteers</option>
+      <option>5–19 employees/volunteers</option>
+      <option>20–49 employees/volunteers</option>
+      <option>50–99 employees/volunteers</option>
+      <option>100+ employees/volunteers</option>
+    </select>
+  </div>
+  <div class="form-field">
+    <label class="form-label">${isBiz?'Industry Sector':'NFP Sector / Cause Area'}</label>
+    <select class="form-select" id="f-sector">
+      <option value="">— Select —</option>
+      ${isBiz?`
+      <option>Agriculture, Forestry &amp; Fishing</option>
+      <option>Building &amp; Construction</option>
+      <option>Education &amp; Training</option>
+      <option>Financial Services &amp; Insurance</option>
+      <option>Health Care &amp; Social Assistance</option>
+      <option>Hospitality, Tourism &amp; Events</option>
+      <option>Information Technology &amp; Telecommunications</option>
+      <option>Legal &amp; Professional Services</option>
+      <option>Manufacturing</option>
+      <option>Media, Marketing &amp; Creative</option>
+      <option>Property &amp; Real Estate</option>
+      <option>Retail &amp; E-commerce</option>
+      <option>Transport, Logistics &amp; Warehousing</option>
+      <option>Utilities &amp; Energy</option>
+      <option>Other</option>
+      `:`
+      <option>Community Services &amp; Support</option>
+      <option>Disability Services</option>
+      <option>Education &amp; Youth</option>
+      <option>Aged Care &amp; Elderly Support</option>
+      <option>Environment &amp; Conservation</option>
+      <option>Health &amp; Medical Research</option>
+      <option>Housing &amp; Homelessness</option>
+      <option>Humanitarian &amp; International Aid</option>
+      <option>Indigenous Community Services</option>
+      <option>Legal Aid &amp; Advocacy</option>
+      <option>Religious &amp; Faith-Based</option>
+      <option>Sports &amp; Recreation</option>
+      <option>Arts &amp; Culture</option>
+      <option>Other</option>
+      `}
+    </select>
+  </div>
+  <div class="form-field">
+    <label class="form-label">${isBiz?'IT Support Arrangement':'IT or Cyber Security Responsibility'}</label>
+    <select class="form-select" id="f-it">
+      <option value="">— Select —</option>
+      <option>In-house IT team or dedicated IT staff</option>
+      <option>External IT provider / Managed Service Provider (MSP)</option>
+      <option>Volunteer or part-time IT support</option>
+      <option>No dedicated IT — managed by general staff</option>
+    </select>
+  </div>
+  <div class="form-field">
+    <label class="form-label">${isBiz?'Staff Personal Devices (BYOD)':'Volunteer Personal Devices (BYOD)'}</label>
+    <select class="form-select" id="f-byod">
+      <option value="">— Select —</option>
+      <option>Yes — with a formal BYOD policy</option>
+      <option>Yes — without a formal policy</option>
+      <option>No — organisation-owned devices only</option>
+      <option>Mixed — some use personal, some use org devices</option>
+    </select>
+  </div>
+  ${!isBiz?`
+  <div class="form-field full">
+    <label class="form-label">Does your organisation accept online donations or process online payments?</label>
+    <select class="form-select" id="f-payments">
+      <option value="">— Select —</option>
+      <option>Yes</option>
+      <option>No</option>
+      <option>Not yet — planning to in future</option>
+    </select>
+  </div>`:''}`;
+}
+
+function beginAssessment(){
+  ['f-size','f-sector','f-it','f-byod','f-payments'].forEach(id=>{
+    const el=document.getElementById(id); if(el) orgData[id]=el.value;
+  });
+  cats=profile==='business'?CATS_BIZ:CATS_NFP;
+  catIdx=0; answers={};
+  goTo('sc-assess');
+  renderCat(0);
+}
+
+/* ────────────────────────────── ASSESSMENT RENDER */
+function renderCat(i){
+  const cat=cats[i];
+  const totalQ=cats.reduce((s,c)=>s+c.questions.length,0);
+  const doneQ=cats.slice(0,i).reduce((s,c)=>s+c.questions.length,0);
+  const pct=Math.round(doneQ/totalQ*100);
+
+  document.getElementById('prog-fill').style.width=pct+'%';
+  document.getElementById('prog-lbl').textContent=pct+'% complete';
+  document.getElementById('cat-icon').textContent=cat.icon;
+  document.getElementById('cat-name').textContent=cat.name;
+  document.getElementById('cat-ct').textContent=` · Category ${i+1} of ${cats.length}`;
+  document.getElementById('btn-next').textContent=i===cats.length-1?'See My Results →':'Next →';
+
+  // Back button routing
+  const pb=document.getElementById('btn-prev');
+  if(i===0){
+    pb.style.visibility='visible';
+    pb.onclick=()=>{ if(profile==='individual') goTo('sc-disclaimer'); else goTo('sc-profile'); };
+  } else {
+    pb.style.visibility='visible';
+    pb.onclick=prevCat;
+  }
+
+  const c=document.getElementById('q-container'); c.innerHTML='';
+  cat.questions.forEach((q,qi)=>{
+    const gn=doneQ+qi+1;
+    const d=document.createElement('div');
+    d.className='q-card'; d.id='qc-'+q.id;
+    d.innerHTML=`
+      <div class="q-num">Question ${gn} of ${totalQ}</div>
+      <div class="q-text">${q.text}</div>
+      <div class="q-hint">${q.hint}</div>
+      <div class="ans-grid">
+        ${mkBtn(q.id,'Yes','sel-yes')}
+        ${mkBtn(q.id,'No','sel-no')}
+        ${mkBtn(q.id,'Not Sure','sel-unsure')}
+        ${mkBtn(q.id,'N/A','sel-na')}
+      </div>`;
+    c.appendChild(d);
+  });
+}
+
+function mkBtn(qId,label,selCls){
+  const cur=answers[qId]===label;
+  return `<button class="ans-btn${cur?' '+selCls:''}" onclick="pickAns('${qId}','${label}','${selCls}',this)">${label}</button>`;
+}
+
+function pickAns(qId,val,cls,btn){
+  answers[qId]=val;
+  document.getElementById('qc-'+qId).querySelectorAll('.ans-btn')
+    .forEach(b=>b.classList.remove('sel-yes','sel-no','sel-unsure','sel-na'));
+  btn.classList.add(cls);
+}
+
+function nextCat(){
+  const unanswered=cats[catIdx].questions.filter(q=>!answers[q.id]);
+  if(unanswered.length){
+    const card=document.getElementById('qc-'+unanswered[0].id);
+    card.style.borderColor='var(--red)';card.style.boxShadow='0 0 0 3px rgba(239,68,68,.15)';
+    card.scrollIntoView({behavior:'smooth',block:'center'});
+    setTimeout(()=>{card.style.borderColor='';card.style.boxShadow='';},2500);
+    return;
+  }
+  if(catIdx<cats.length-1){catIdx++;renderCat(catIdx);window.scrollTo({top:0,behavior:'smooth'});}
+  else buildResults();
+}
+
+function prevCat(){
+  if(catIdx>0){catIdx--;renderCat(catIdx);window.scrollTo({top:0,behavior:'smooth'});}
+}
+
+/* ────────────────────────────── SCORING */
+const SM={'Yes':2,'Not Sure':1,'No':0,'N/A':null};
+function catScore(cat){let e=0,p=0;cat.questions.forEach(q=>{const s=SM[answers[q.id]];if(s!==null&&s!==undefined){e+=s;p+=2;}});return{e,p,pct:p?Math.round(e/p*100):0};}
+function totalScore(){let e=0,p=0;cats.forEach(c=>{const cs=catScore(c);e+=cs.e;p+=cs.p;});return{e,p,pct:p?Math.round(e/p*100):0};}
+function maturity(pct){
+  if(pct>=85)return{label:'Excellent',color:'#10b981',bg:'rgba(16,185,129,.12)',desc:'Outstanding cyber hygiene across all key areas. Keep your practices current as threats evolve, and consider an annual professional review to validate your controls.'};
+  if(pct>=67)return{label:'Good',color:'#06b6d4',bg:'rgba(6,182,212,.12)',desc:'A solid security posture with a few specific gaps. Address the high-priority actions below to meaningfully reduce your remaining risk.'};
+  if(pct>=34)return{label:'Needs Work',color:'#f59e0b',bg:'rgba(245,158,11,.12)',desc:'Some protections are in place, but meaningful gaps remain. Work through the action plan below — many improvements are free and can be implemented quickly.'};
+  return{label:'Needs Attention',color:'#ef4444',bg:'rgba(239,68,68,.12)',desc:'Your current posture carries significant risk. Start with the high-priority actions below immediately — they are the most impactful controls and most are free to implement.'};
+}
+
+/* ────────────────────────────── RESULTS */
+function buildResults(){
+  goTo('sc-results');
+  const ts=totalScore(), mat=maturity(ts.pct);
+
+  const ring=document.getElementById('ring-fill');
+  ring.style.stroke=mat.color;
+  ring.style.strokeDasharray=480;
+  setTimeout(()=>{ring.style.strokeDashoffset=480-(480*ts.pct/100);},120);
+
+  animCount('r-pct',0,ts.pct,1400,v=>v+'%');
+  document.getElementById('r-pts').textContent=`${ts.e} / ${ts.p} points`;
+
+  const pill=document.getElementById('mat-pill');
+  pill.textContent='● '+mat.label;
+  pill.style.cssText=`background:${mat.bg};color:${mat.color};border-color:${mat.color}55`;
+
+  document.getElementById('r-title').textContent=`Cyber Health: ${mat.label}`;
+  document.getElementById('r-desc').textContent=mat.desc;
+
+  // Org summary
+  const os=document.getElementById('org-summary');
+  const size=document.getElementById('f-size')?.value||'';
+  const sector=document.getElementById('f-sector')?.value||'';
+  if(profile!=='individual'&&(size||sector)){
+    os.innerHTML=`<div class="org-summary">
+      <div class="org-chip">${profile==='business'?'🏢':'🤝'} <strong>${profile==='business'?'Small Business':'Not-for-Profit'}</strong></div>
+      ${size?`<div class="org-chip">👥 <strong>${size}</strong></div>`:''}
+      ${sector?`<div class="org-chip">🏷️ <strong>${sector}</strong></div>`:''}
+    </div>`;
+  } else os.innerHTML='';
+
+  // Cat score bars
+  const cs=document.getElementById('cat-scores'); cs.innerHTML='';
+  cats.forEach(cat=>{
+    const s=catScore(cat);
+    const col=s.pct>=75?'#10b981':s.pct>=50?'#06b6d4':s.pct>=25?'#f59e0b':'#ef4444';
+    cs.innerHTML+=`<div class="cat-row">
+      <div class="cat-row-icon">${cat.icon}</div>
+      <div class="cat-row-body">
+        <div class="cat-row-name">${cat.name}</div>
+        <div class="cat-bar-wrap"><div class="cat-bar" id="cb-${cat.id}" style="width:0%;background:${col}"></div></div>
+      </div>
+      <div class="cat-pct">${s.pct}%</div>
+    </div>`;
+  });
+  setTimeout(()=>cats.forEach(cat=>{const b=document.getElementById('cb-'+cat.id);if(b)b.style.width=catScore(cat).pct+'%';}),300);
+
+  // Recommendations
+  const rl=document.getElementById('reco-list'); rl.innerHTML='';
+  const buckets={high:[],medium:[],low:[]};
+  cats.forEach(cat=>cat.questions.forEach(q=>{
+    const a=answers[q.id];
+    if(a==='No'||a==='Not Sure'){const r=RDB[q.id];if(r)buckets[r.p].push(r);}
+  }));
+  const all=[...buckets.high,...buckets.medium,...buckets.low];
+  if(!all.length){
+    rl.innerHTML=`<div class="reco-card"><div class="reco-badge badge-low" style="font-size:20px">🎉</div><div><div class="reco-head">No Critical Gaps Found</div><div class="reco-body">You answered Yes to all applicable questions. Continue monitoring your security posture regularly as threats evolve, and consider an annual professional review.</div></div></div>`;
+    return;
+  }
+  all.forEach(r=>{
+    const badge=r.p==='high'?'badge-high':r.p==='medium'?'badge-med':'badge-low';
+    const icon=r.p==='high'?'🔴':r.p==='medium'?'🟡':'🟢';
+    rl.innerHTML+=`<div class="reco-card">
+      <div class="reco-badge ${badge}">${icon}</div>
+      <div>
+        <div class="reco-head">${r.h}</div>
+        <div class="reco-body">${r.t}</div>
+        <a class="reco-link" href="${r.l}" target="_blank" rel="noopener">Learn more →</a>
+      </div>
+    </div>`;
+  });
+}
+
+/* ────────────────────────────── UTILS */
+function animCount(id,from,to,dur,fmt){
+  const el=document.getElementById(id),s=performance.now();
+  function f(n){const p=Math.min((n-s)/dur,1),e=p<.5?2*p*p:-1+(4-2*p)*p;el.textContent=fmt(Math.round(from+(to-from)*e));if(p<1)requestAnimationFrame(f);}
+  requestAnimationFrame(f);
+}
+
+function restartAll(){
+  profile=null;agreed=false;orgData={};catIdx=0;answers={};cats=[];
+  document.querySelectorAll('.prof-card').forEach(c=>c.classList.remove('selected'));
+  document.getElementById('btn-w-next').disabled=true;
+  document.getElementById('agree-row').classList.remove('checked');
+  document.getElementById('agree-cb').textContent='';
+  document.getElementById('btn-d-next').disabled=true;
+  goTo('sc-welcome');
+}
+</script>
+</body>
+</html>
