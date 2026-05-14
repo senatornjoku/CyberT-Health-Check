@@ -2,7 +2,7 @@
 
 **A free, anonymous, open-source cyber security self-assessment tool for individuals, small businesses, and not-for-profits.**
 
-> Inspired by the [Australian Signals Directorate's Cyber Health Check Tool](https://www.cyber.gov.au/cyberhealthcheck). Built for everyone, everywhere.
+>  Built for everyone, everywhere.
 
 ---
 
@@ -109,9 +109,10 @@ MIT License — free to use, modify, and distribute. See [LICENSE](LICENSE).
 
 ## 🙏 Acknowledgements
 
-- Inspired by the [ASD Cyber Health Check Tool](https://www.cyber.gov.au/cyberhealthcheck) by the Australian Signals Directorate
+- Inspired by the Australian Signals Directorate
 - Security guidance references [cyber.gov.au](https://www.cyber.gov.au) and [ACSC Essential Eight](https://www.cyber.gov.au/resources-business-and-government/essential-cyber-security/essential-eight)
 
 ---
 
 *CyberT Health Check — Built to make cyber security accessible for everyone.*
+Engr. Titus Njoku.O Msc, CAHIMS
